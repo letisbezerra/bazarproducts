@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches: [develop, main]
+  pull_request:
+    branches: [develop, main]
+
+jobs:
+  test:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -switch /Applications/Xcode.app
+
+      - name: Resolve Swift packages
+        run: xcodebuild -resolvePackageDependencies -project EnjoeiProducts.xcodeproj -scheme EnjoeiProducts
+
+      - name: Run tests
+        run: |
+          xcodebuild test \
+            -project EnjoeiProducts.xcodeproj \
+            -scheme EnjoeiProducts \
+            -destination 'platform=iOS Simulator,name=iPhone 17' \
+            -skipPackagePluginValidation
