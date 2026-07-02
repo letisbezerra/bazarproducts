@@ -72,12 +72,12 @@ Spec: `docs/specs/01-core-networking.md` — `HTTPClient` protocol signature, `N
 Files (under `EnjoeiProducts/Core/`):
 - `HTTPClient.swift` — protocol `func send<T: Decodable>(_ endpoint: Endpoint) async throws -> T`, so `ProductsRepositoryImpl` (Phase 2) and its tests never touch `URLSession` directly.
 - `URLSessionHTTPClient.swift` — the real implementation, built with `URLComponents`/`URLQueryItem` (per the architecture doc's security section, avoids manual string concatenation for query params).
-- `Endpoint.swift` — small struct (path, query items, method) instead of hardcoding the full URL per call.
-- `NetworkError.swift` — typed errors (`invalidResponse`, `decoding`, `http(status:)`, `transport(Error)`) so the ViewModel (Phase 3) can show one generic message without leaking payload/stack traces (matches the security section already written).
+- `Endpoint.swift` — small struct (path, query items, an `HTTPMethod` enum defaulting to `.get`) instead of hardcoding the full URL per call.
+- `NetworkError.swift` — 4 flat, `Equatable` cases (`invalidResponse`, `decoding`, `http(status:)`, `transport`) with no associated `Error` payload, so the ViewModel (Phase 3) can show one generic message without leaking payload/stack traces (matches the security section already written); the underlying `Error` is logged at the mapping site instead of carried in the type.
 - `ImageURLBuilder.swift` — `static func url(imagePublicId: String, size: String = "500x500") -> URL?`, pure concatenation as confirmed above.
-- `AppLogger.swift` — thin protocol (`log(_:category:)`) wrapping `os.Logger`, with categories `.network`/`.viewModel`. This is the observability requirement from the job posting; no third-party SDK, but shaped so a real backend (Crashlytics/Sentry) could conform to the same protocol later without touching call sites.
+- `AppLogger.swift` — a concrete struct (`log(_:category:)`) wrapping `os.Logger`, with categories `.network`/`.viewModel`. This is the observability requirement from the job posting; no third-party SDK.
 
-Tests (`EnjoeiProductsTests/Core/`): `NetworkErrorMappingTests`, `ImageURLBuilderTests` (with/without a real `image_public_id` sample from the live API response captured above).
+Tests (`EnjoeiProductsTests/Core/`): `URLSessionHTTPClientTests` (covers request building and all `NetworkError` mapping paths), `ImageURLBuilderTests` (with/without a real `image_public_id` sample from the live API response captured above), `AppLoggerTests`.
 
 ## Phase 2 — Domain & Data (`feature/domain-data`)
 

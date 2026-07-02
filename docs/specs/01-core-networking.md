@@ -26,10 +26,14 @@ Files under `EnjoeiProducts/Core/`:
   ```
 - `Endpoint.swift` — small struct, not a hardcoded URL per call:
   ```swift
+  enum HTTPMethod: String {
+      case get = "GET"
+  }
+
   struct Endpoint {
       let path: String
       let queryItems: [URLQueryItem]
-      let method: String // "GET" only for now, kept as a String to avoid an enum with one case
+      let method: HTTPMethod
   }
   ```
 - `URLSessionHTTPClient.swift` — real implementation:
@@ -54,23 +58,24 @@ Files under `EnjoeiProducts/Core/`:
       static func url(imagePublicId: String, size: String = "500x500") -> URL?
   }
   ```
-  Pure string concatenation: `https://photos.enjoei.com.br/public/{size}/{imagePublicId}`, then `URL(string:)`. Returns `nil` only if the resulting string is malformed (e.g. `imagePublicId` empty) — the mapper (Phase 2) decides what an absent image URL means for `Product`, this type doesn't decide that.
+  Pure string concatenation: `https://photos.enjoei.com.br/public/{size}/{imagePublicId}`, then `URL(string:)`. Returns `nil` if either `imagePublicId` or `size` is empty — the mapper (Phase 2) decides what an absent image URL means for `Product`, this type doesn't decide that.
 - `AppLogger.swift`
   ```swift
-  protocol AppLogger {
-      func log(_ message: String, category: LogCategory)
-  }
   enum LogCategory: String {
       case network
       case viewModel
   }
+
+  struct AppLogger {
+      func log(_ message: String, category: LogCategory)
+  }
   ```
-  Thin wrapper around `os.Logger` (`OSLogAppLogger` conforming type). Protocol exists so a future real backend (Crashlytics/Sentry) could conform without touching call sites — not built now, no abstraction beyond what's needed today.
+  A concrete struct wrapping `os.Logger`, not a protocol — there is exactly one way this app logs today, and no test double exists that needs a substitute. A protocol here would be premature abstraction for a hypothetical future backend (Crashlytics/Sentry) that doesn't exist yet; if one is ever added, extracting a protocol at that point costs one refactor, not two.
 
 ## Decisions & error cases
 
 - `NetworkError` has exactly 4 cases, matched to the 4 failure modes an HTTP call can actually have (bad/missing response, non-2xx status, undecodable body, transport-level failure). No catch-all `.unknown` case — if something doesn't fit these 4, that's a bug in the mapping logic, not a legitimate 5th outcome to swallow silently.
-- `Endpoint.method` is a `String`, not an enum, because only `GET` exists in this app (single read-only screen) — an enum with one case would be premature abstraction for a case that will never grow within this test's scope.
+- `Endpoint.method` is an `HTTPMethod` enum (one case, `.get`, today), not a raw `String` — a `String` default would let a typo (`"Get"`, `"get "`) compile silently and only fail at runtime once it reaches `URLRequest.httpMethod`; the enum closes that off for negligible extra code.
 - No retry/backoff logic — out of scope per `docs/ARCHITECTURE.md`; the ViewModel's error state already covers "let the user pull-to-refresh."
 - No auth/token handling — the real endpoint needs none (verified directly).
 
@@ -94,7 +99,7 @@ Files under `EnjoeiProducts/Core/`:
 - `ImageURLBuilderTests`:
   - real sample `image_public_id` from the live API response → matches the expected concatenated URL exactly.
   - empty `imagePublicId` → `nil`.
-- `AppLoggerTests`: confirms the wrapper doesn't crash and routes to the right `OSLog` category — not over-testing a logging shim.
+- `AppLoggerTests`: confirms the wrapper doesn't crash for either category. `os.Logger` output isn't practically assertable from XCTest, so this deliberately doesn't claim to verify routing/content — just that logging a message never throws or crashes the caller.
 
 ## Verification
 
