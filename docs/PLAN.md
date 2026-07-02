@@ -7,7 +7,7 @@ This is the durable copy of our build-out plan, kept in the repo so any future s
 | Phase | Branch | Spec doc | Status |
 |---|---|---|---|
 | 0 — Standards & tooling | `feature/project-standards` | `docs/specs/00-project-standards.md` | Merged — [#1](https://github.com/letisbezerra/bazarproducts/pull/1) |
-| 1 — Core & networking | `feature/core-networking` | `docs/specs/01-core-networking.md` | Not started |
+| 1 — Core & networking | `feature/core-networking` | `docs/specs/01-core-networking.md` | PR open — [#2](https://github.com/letisbezerra/bazarproducts/pull/2) |
 | 2 — Domain & Data | `feature/domain-data` | `docs/specs/02-domain-data.md` | Not started |
 | 3 — Product list screen | `feature/product-list-screen` | `docs/specs/03-product-list-screen.md` | Not started |
 | 4 — UI tests, accessibility & performance | `feature/ui-tests-and-polish` | `docs/specs/04-ui-tests-and-polish.md` | Not started |
