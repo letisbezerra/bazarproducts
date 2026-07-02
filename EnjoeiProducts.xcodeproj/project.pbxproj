@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		0545BB011FDA5B7E7BADFA00 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = B7C60C7DDDF7D929AF918DD9 /* Kingfisher */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		55C22B9E2FF5C35E00D14F15 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -32,16 +36,22 @@
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		55C22B922FF5C35B00D14F15 /* EnjoeiProducts */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
 			path = EnjoeiProducts;
 			sourceTree = "<group>";
 		};
 		55C22BA02FF5C35E00D14F15 /* EnjoeiProductsTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
 			path = EnjoeiProductsTests;
 			sourceTree = "<group>";
 		};
 		55C22BAA2FF5C35E00D14F15 /* EnjoeiProductsUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
 			path = EnjoeiProductsUITests;
 			sourceTree = "<group>";
 		};
@@ -52,6 +62,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0545BB011FDA5B7E7BADFA00 /* Kingfisher in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -106,12 +117,14 @@
 			buildRules = (
 			);
 			dependencies = (
+				BC841AB23F3314E993E15B06 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				55C22B922FF5C35B00D14F15 /* EnjoeiProducts */,
 			);
 			name = EnjoeiProducts;
 			packageProductDependencies = (
+				B7C60C7DDDF7D929AF918DD9 /* Kingfisher */,
 			);
 			productName = EnjoeiProducts;
 			productReference = 55C22B902FF5C35B00D14F15 /* EnjoeiProducts.app */;
@@ -134,8 +147,6 @@
 				55C22BA02FF5C35E00D14F15 /* EnjoeiProductsTests */,
 			);
 			name = EnjoeiProductsTests;
-			packageProductDependencies = (
-			);
 			productName = EnjoeiProductsTests;
 			productReference = 55C22B9D2FF5C35E00D14F15 /* EnjoeiProductsTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
@@ -157,8 +168,6 @@
 				55C22BAA2FF5C35E00D14F15 /* EnjoeiProductsUITests */,
 			);
 			name = EnjoeiProductsUITests;
-			packageProductDependencies = (
-			);
 			productName = EnjoeiProductsUITests;
 			productReference = 55C22BA72FF5C35E00D14F15 /* EnjoeiProductsUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
@@ -195,6 +204,10 @@
 			);
 			mainGroup = 55C22B872FF5C35B00D14F15;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				E506DCD8C4328E6DE4D3446B /* XCRemoteSwiftPackageReference "Kingfisher" */,
+				07B4BCC1BF1486D0C66DA9DB /* XCRemoteSwiftPackageReference "SwiftLint" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 55C22B912FF5C35B00D14F15 /* Products */;
 			projectDirPath = "";
@@ -265,6 +278,10 @@
 			isa = PBXTargetDependency;
 			target = 55C22B8F2FF5C35B00D14F15 /* EnjoeiProducts */;
 			targetProxy = 55C22BA82FF5C35E00D14F15 /* PBXContainerItemProxy */;
+		};
+		BC841AB23F3314E993E15B06 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			productRef = 21C5144EEB64A4E359CA60E5 /* plugin:SwiftLintBuildToolPlugin */;
 		};
 /* End PBXTargetDependency section */
 
@@ -578,6 +595,38 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		07B4BCC1BF1486D0C66DA9DB /* XCRemoteSwiftPackageReference "SwiftLint" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/realm/SwiftLint";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.65.0;
+			};
+		};
+		E506DCD8C4328E6DE4D3446B /* XCRemoteSwiftPackageReference "Kingfisher" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/onevcat/Kingfisher.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 8.10.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		21C5144EEB64A4E359CA60E5 /* plugin:SwiftLintBuildToolPlugin */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 07B4BCC1BF1486D0C66DA9DB /* XCRemoteSwiftPackageReference "SwiftLint" */;
+			productName = "plugin:SwiftLintBuildToolPlugin";
+		};
+		B7C60C7DDDF7D929AF918DD9 /* Kingfisher */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E506DCD8C4328E6DE4D3446B /* XCRemoteSwiftPackageReference "Kingfisher" */;
+			productName = Kingfisher;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 55C22B882FF5C35B00D14F15 /* Project object */;
 }
