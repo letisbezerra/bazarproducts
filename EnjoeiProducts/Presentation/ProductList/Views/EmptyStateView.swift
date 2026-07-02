@@ -6,15 +6,15 @@ struct EmptyStateView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("ué, não encontramos nadinha")
-                .font(.title2.bold())
+                .font(AppFont.font(size: 22, weight: .bold))
 
             Text("que tal recomeçar do começo?")
-                .font(.body)
+                .font(AppFont.font(size: 15, weight: .regular))
                 .foregroundStyle(.secondary)
 
             Button(action: onClearSearch) {
                 Text("limpar busca")
-                    .font(.body.bold())
+                    .font(AppFont.font(size: 15, weight: .semibold))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 24)
                     .padding(.vertical, 12)

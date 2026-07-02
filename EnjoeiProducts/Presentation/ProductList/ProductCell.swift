@@ -16,7 +16,7 @@ final class ProductCell: UICollectionViewCell {
 
     private let badgeLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 12, weight: .semibold)
+        label.font = AppFont.uiFont(size: 10, weight: .semibold)
         label.textColor = .white
         label.backgroundColor = UIColor(named: "BrandPurple")
         label.textAlignment = .center
@@ -35,13 +35,13 @@ final class ProductCell: UICollectionViewCell {
 
     private let currentPriceLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 12, weight: .semibold)
+        label.font = AppFont.uiFont(size: 12, weight: .regular)
         return label
     }()
 
     private let originalPriceLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 12, weight: .semibold)
+        label.font = AppFont.uiFont(size: 12, weight: .regular)
         label.textColor = .secondaryLabel
         return label
     }()
@@ -90,7 +90,7 @@ final class ProductCell: UICollectionViewCell {
     }
 
     private func setUpViews() {
-        contentView.layer.cornerRadius = 12
+        contentView.layer.cornerRadius = 16
         contentView.layer.masksToBounds = true
 
         let priceStack = UIStackView(arrangedSubviews: [currentPriceLabel, originalPriceLabel])
@@ -140,7 +140,7 @@ private struct ProductCellPreview: UIViewRepresentable {
     let product: Product
 
     func makeUIView(context: Context) -> ProductCell {
-        let cell = ProductCell(frame: CGRect(x: 0, y: 0, width: 170, height: 260))
+        let cell = ProductCell(frame: CGRect(x: 0, y: 0, width: 163, height: 163))
         cell.configure(with: product)
         return cell
     }
@@ -157,7 +157,7 @@ private struct ProductCellPreview: UIViewRepresentable {
         originalPrice: 80.0,
         discountPercentage: 30
     ))
-    .frame(width: 170, height: 260)
+    .frame(width: 163, height: 163)
 }
 
 #Preview("Without discount") {
@@ -169,6 +169,6 @@ private struct ProductCellPreview: UIViewRepresentable {
         originalPrice: nil,
         discountPercentage: nil
     ))
-    .frame(width: 170, height: 260)
+    .frame(width: 163, height: 163)
 }
 #endif

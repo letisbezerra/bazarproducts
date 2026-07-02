@@ -48,14 +48,19 @@ Search bar + its "limpar busca" link stay visible/pinned at the top even in this
 The developer shared Figma Dev Mode inspector crops for the price/badge elements, giving exact values instead of a screenshot guess:
 
 - **Brand color**: `#61005D` (exact hex, confirmed) — stored as the `BrandPurple` color asset in `Assets.xcassets`, used for the discount badge background, the current (sale) price text, the "limpar busca" link/button, and the logo mark.
-- **Price text** (both current and strikethrough-original): font family "ProximaNova," weight 600 (semibold), size 12px, 0 letter-spacing. **ProximaNova is a paid/commercial font, not an iOS system font** — the developer decided to use the system font (San Francisco) at the same size/weight (12pt semibold) as a stand-in rather than license/bundle the real font file, at least for now. If the real font is ever provided, only `ProductCell`'s label `.font` assignments need to change.
-- **Discount badge**: ~49×22pt.
-- **Price pill**: ~94×22pt container.
+- **Font family**: Figma specifies "ProximaNova" (a paid/commercial font, not an iOS system font). The developer decided to bundle **Montserrat** instead — an open-source (SIL OFL) geometric sans-serif close enough to ProximaNova (~85% visual similarity per the developer's own research) to use as a real, licensable substitute rather than an approximation. Bundled as `Montserrat-Variable.ttf` (`EnjoeiProducts/Resources/Fonts/`), registered via `UIAppFonts` in `Configuration/Info.plist`, accessed through `AppFont` (`EnjoeiProducts/Presentation/Shared/AppFont.swift`) so every call site stays a one-line change if the real ProximaNova file is ever provided.
+- **Price text** (both current and strikethrough-original): size 12px, line height 100%, 0 letter-spacing. Figma measures weight 600 (semibold), but the developer deliberately chose **regular weight** here instead — a conscious visual call, not an unmeasured guess.
+- **Badge text** ("33% off"): **semibold** (matches Figma's measured weight, unlike the price text above), white (`#FFFFFF`), centered, ~4-6pt padding inside the badge shape. Size deliberately reduced to 10px (Figma measures 12px) — another conscious developer call, not a measurement gap.
+- **Discount badge container**: ~49×22pt for a 2-digit percentage — implemented as `greaterThanOrEqualToConstant` rather than a fixed 49pt, so it still fits a 1- or 3-digit percentage correctly.
+- **Price pill container**: ~94×22pt for a two-price ("R$ 200 R$ 300"-length) string — implemented as auto-sizing (hug content + fixed padding) rather than a fixed 94pt, so a single, shorter price string doesn't leave dead space inside the pill.
+- **Product card corner radius**: 16pt (confirmed via a rounded-corner padding diagram in Dev Mode).
+- **Screen margin**: 16pt either side of the grid (confirmed — matches what was already implemented as a guess).
+- **Grid gutter**: 8pt between columns/rows (confirmed — matches what was already implemented as a guess).
 - **Primary text** (headline, no-discount price): near-black, matches `.label`.
 - **Secondary text**: medium gray, matches `.secondaryLabel` — subtitle, strikethrough original price, search placeholder.
 - **Surfaces**: white for the price pill/search field; light gray (`.systemGray6`) for skeleton blocks and the image placeholder background.
 
-Everything not listed above (headline/subtitle exact size, grid gutter/margin, corner radii) is still an unmeasured guess — update this section as more Dev Mode values come in.
+Still unmeasured: headline/subtitle exact size, the search bar's own dimensions, the "limpar busca" button's exact padding. Update this section as more Dev Mode values come in.
 
 ## How to use this doc
 
