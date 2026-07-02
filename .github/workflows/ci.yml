@@ -9,6 +9,7 @@ on:
 jobs:
   test:
     runs-on: macos-latest
+    timeout-minutes: 15
 
     steps:
       - uses: actions/checkout@v4
@@ -18,16 +19,6 @@ jobs:
           LATEST_XCODE=$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)
           sudo xcode-select -switch "$LATEST_XCODE"
           xcodebuild -version
-          xcodebuild -showsdks
-
-      - name: Diagnose available simulators
-        run: |
-          echo "--- Installed Xcode versions ---"
-          ls /Applications | grep Xcode
-          echo "--- Available runtimes ---"
-          xcrun simctl list runtimes available
-          echo "--- Available iOS devices ---"
-          xcrun simctl list devices available
 
       - name: Resolve Swift packages
         run: xcodebuild -resolvePackageDependencies -project EnjoeiProducts.xcodeproj -scheme EnjoeiProducts
