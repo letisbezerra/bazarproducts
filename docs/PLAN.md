@@ -27,17 +27,30 @@ This changes two things versus the original `docs/ARCHITECTURE.md` draft, reconc
 
 Each phase below is one Gitflow feature branch off `develop`, merged back via PR when its tests pass. This mirrors how the job's shape-up/transparency culture expects work to be visible in increments, not delivered as one giant diff.
 
-## Spec-first workflow (applies to every phase below)
+## Phase lifecycle: start → middle → end
 
-Per the spec-first approach in `CLAUDE.md`, no implementation code gets written before its spec exists and is reviewed. Concretely, each phase branch follows the same sequence:
+Every phase in this plan — no exceptions — goes through the same three stages before its PR merges. This sequence is the actual process contract for this project; don't skip or reorder steps within a stage.
 
-1. Create the phase's feature branch off `develop`.
-2. Write `docs/specs/NN-phase-name.md` — **first commit on the branch, before any `.swift` file**. Each spec covers: goal/scope, inputs (what it consumes from prior phases or the real API), outputs (public types/function signatures being introduced), error/edge cases to handle, files to be created or changed, and the list of test cases that will prove it (mapped 1:1 to the error/edge cases). This is reviewed before implementation starts.
-3. Implement exactly what the spec describes.
-4. Write the tests the spec listed.
-5. If anything diverged from the spec during implementation (it happens), update the spec doc in the same PR so it stays true, not aspirational.
-6. Before opening the PR: run the `finish-task` skill (QA/merge-readiness validation against this phase's spec and tests) and the `code-review` skill (correctness bugs, reuse/simplification findings on the diff). Fix what they surface.
-7. Open the PR to `develop`, update the status table above.
+### Start
+
+1. Check for pending/uncommitted changes (`git status`). Resolve or commit them before doing anything else — never branch off a dirty tree.
+2. Confirm `develop` is up to date with `origin/develop` (`git fetch`, then compare/`git pull`).
+3. Create the phase's feature branch off the now-current `develop`.
+
+### Middle
+
+1. Re-read `docs/TEST_BRIEF.md` (requirements), `docs/ARCHITECTURE.md` (architecture decisions), this file (the plan), and any other doc/code relevant to the phase.
+2. Check the intended solution is still coherent with all of the above. If something drifted since the plan was written (e.g. a fact discovered from the real API), reconcile it now, before writing anything — don't carry a stale assumption into the spec.
+3. Once coherent: write `docs/specs/NN-phase-name.md` — **first commit on the branch, before any `.swift` file**. Each spec covers: goal/scope, inputs, outputs (public types/function signatures being introduced), error/edge cases to handle, files to be created or changed, and the list of test cases that will prove it. This is reviewed before implementation starts.
+4. Implement exactly what the spec describes.
+
+### End
+
+1. If the phase produces something testable, run a test plan: the automated tests the spec listed, plus manual verification where automated tests can't cover it (e.g. comparing the running app against the Figma states).
+2. Check coherence again: does the implementation actually match the spec? If anything diverged during implementation, update the spec doc now so it stays true, not aspirational.
+3. Run a rigorous review before the PR exists, not after: the `finish-task` skill (QA/merge-readiness validation) and the `code-review` skill (correctness bugs, reuse/simplification findings on the diff). Fix what they surface.
+4. Check for conflicts with `develop` (`git fetch` + a merge preview) and resolve any *before* opening the PR, never after.
+5. Open the PR to `develop`, with a description documenting what changed and why. Update the status table at the top of this file.
 
 Spec docs live in `docs/specs/`, numbered to match phase order. They stay in the repo after merge as a paper trail of what was decided and why.
 
