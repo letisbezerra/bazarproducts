@@ -21,11 +21,11 @@ Visual reference for Phase 3 (screen) and Phase 4 (polish), read directly from a
 - 2-column grid, consistent gutter between cards (small, roughly 8–12pt by eye).
 - Screen-edge margin around the grid (roughly 16pt by eye).
 - Each card: rounded corners on all four sides, moderate radius.
-- **Image**: fills the top majority of the card. Background colors visible (peach, teal, olive, pink) come from the product photography itself, not app chrome — no card background color to design.
-- **Discount badge** (only when there's a discount): small rounded-rect/pill, dark plum/maroon background, bold white text, format **"`{n}`% off"** (keeps the English word "off," common loanword in Brazilian retail — not "desconto" or "%OFF"). Positioned top-right corner of the image, inset a few points from the edges.
-- **Price row**, in a white strip at the bottom of the card, left-aligned:
-  - With discount: current (sale) price shown **first, bold, dark** — then the original (listed) price shown after, **lighter gray, strikethrough**. Matches this app's `Product.currentPrice`/`originalPrice` naming exactly (current first).
-  - Without discount: a single price, same bold/dark styling as the current-price case, no second price, no badge.
+- **Image fills the entire card**, edge to edge — corrected after a closer screenshot: there is no separate white price strip below the photo. Background colors visible (peach, teal, olive, pink) come from the product photography itself, not app chrome.
+- **Discount badge** (only when there's a discount): small rounded-rect, dark plum/maroon background, bold white text, format **"`{n}`% off"** (keeps the English word "off," common loanword in Brazilian retail — not "desconto" or "%OFF"). Floats over the **top-right** corner of the image, inset a few points from the edges.
+- **Price pill**: a small white rounded-rect **floating over the bottom-left corner of the image** (not a separate strip beneath it), sized to fit its content with small padding:
+  - With discount: current (sale) price shown **first, bold, in the brand plum/maroon color** — then the original (listed) price shown after, **gray, strikethrough**. The current price is colored, not black, specifically when discounted — a detail only visible in a closer screenshot, missed in the first pass of this guide.
+  - Without discount: a single price, bold, **near-black** (not the brand color) — no second price, no badge.
 - No visible price-per-unit or extra metadata beyond price and (conditionally) the badge — title/product name is **not shown on the card** in any of the six frames. (Worth confirming with the developer since `docs/ARCHITECTURE.md`'s table doesn't mention a title on the card either, and our `Product` entity does carry a `title` — it may be `accessibilityLabel`-only, not rendered visibly.)
 
 ## 4. Loading (skeleton)
@@ -43,15 +43,21 @@ Search bar + its "limpar busca" link stay visible/pinned at the top even in this
 3. **"limpar busca" button** — dark plum/maroon pill, bold white text, sized to its content (not full-width), some vertical gap above it. This is a *second* "limpar busca" affordance distinct from the inline link next to the search field — both exist simultaneously in this state.
 4. **Mascot illustration** — a pink cartoon animal character (Enjoei brand mascot) holding a smartphone with a smiling face on its screen, surrounded by small scattered decorative shapes (a cloud, a small plant, a bicycle silhouette, an "X" mark). Positioned below the button, appears lower/right in the available space. **This exact asset is not something extractable from the shared screenshot as a clean, transparent image file** — still an open blocker (`docs/PLAN.md`) until the developer exports it from Figma, or we agree on a stand-in.
 
-## 6. Rough color/type read (unmeasured, for a starting point only)
+## 6. Color/type — measured values from Figma Dev Mode
 
-- **Brand color**: a deep plum/maroon purple — used for the logo mark, discount badge background, "limpar busca" link text, and the "limpar busca" button background. Approximate with a custom color (e.g. an `AccentColor`-adjacent asset) until the developer supplies the real hex.
-- **Primary text**: near-black, used for headline and current/bold prices.
-- **Secondary text**: medium gray, used for the subtitle, the strikethrough original price, and the search placeholder.
-- **Surfaces**: white for cards/search field; a very light gray for skeleton blocks.
-- **Type**: headline reads bold and noticeably larger than body text; prices are a small-to-medium bold weight; badge text is small and bold; everything else is regular weight. No typeface identification possible from a screenshot (assume the system font unless told otherwise).
+The developer shared Figma Dev Mode inspector crops for the price/badge elements, giving exact values instead of a screenshot guess:
+
+- **Brand color**: `#61005D` (exact hex, confirmed) — stored as the `BrandPurple` color asset in `Assets.xcassets`, used for the discount badge background, the current (sale) price text, the "limpar busca" link/button, and the logo mark.
+- **Price text** (both current and strikethrough-original): font family "ProximaNova," weight 600 (semibold), size 12px, 0 letter-spacing. **ProximaNova is a paid/commercial font, not an iOS system font** — the developer decided to use the system font (San Francisco) at the same size/weight (12pt semibold) as a stand-in rather than license/bundle the real font file, at least for now. If the real font is ever provided, only `ProductCell`'s label `.font` assignments need to change.
+- **Discount badge**: ~49×22pt.
+- **Price pill**: ~94×22pt container.
+- **Primary text** (headline, no-discount price): near-black, matches `.label`.
+- **Secondary text**: medium gray, matches `.secondaryLabel` — subtitle, strikethrough original price, search placeholder.
+- **Surfaces**: white for the price pill/search field; light gray (`.systemGray6`) for skeleton blocks and the image placeholder background.
+
+Everything not listed above (headline/subtitle exact size, grid gutter/margin, corner radii) is still an unmeasured guess — update this section as more Dev Mode values come in.
 
 ## How to use this doc
 
 - Phase 3's spec (`docs/specs/03-product-list-screen.md`) implements against this guide's layout/behavior description.
-- Exact colors, spacing, and the mascot asset remain flagged in `docs/PLAN.md`'s "Open blockers" section until the developer reviews the running app next to the actual Figma file and corrects what's wrong here.
+- Remaining unmeasured spacing/typography and the mascot asset stay flagged in `docs/PLAN.md`'s "Open blockers" section until the developer reviews the running app next to the actual Figma file and corrects what's wrong here.

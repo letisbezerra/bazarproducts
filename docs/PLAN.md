@@ -18,8 +18,9 @@ This is the durable copy of our build-out plan, kept in the repo so any future s
 Things a phase surfaced that only the developer can resolve (a design asset, a product decision, an account permission). Checked off as resolved, not deleted, so the history of what needed a human call stays visible.
 
 - [x] **No visual access to the Figma file at all** — partially resolved: the developer shared a screenshot of the six flow frames (Loading, Results, Pagination, Search Empty/Filled, No Results), analyzed into `docs/DESIGN_GUIDE.md`. This gives real layout/behavior detail (badge format, price ordering, search bar/"limpar busca" behavior, empty-state structure) that wasn't in `docs/ARCHITECTURE.md`'s text-only table before.
-- [ ] **Exact pt/spacing/hex-color calibration** — `docs/DESIGN_GUIDE.md` is a best-effort visual read of a screenshot, not measured values. Decision: build Phase 3 now with reasonable HIG-default numbers, then calibrate spacing/colors together once it's running, rather than blocking implementation on pixel-exact values upfront.
-- [ ] **Mascot illustration for "No Results"** — still not in `Assets.xcassets` (confirmed empty except `AppIcon`/`AccentColor`) and not extractable as a clean asset from a screenshot. Phase 3 uses an SF Symbol as an explicit placeholder until the developer exports the real asset from Figma.
+- [x] **Brand color + price/badge typography** — resolved via Figma Dev Mode crops: exact hex `#61005D` (now the `BrandPurple` asset), price/badge text 12pt/semibold. Font family "ProximaNova" is a paid font; developer decided to substitute the system font (San Francisco) rather than license/bundle it — documented in `docs/DESIGN_GUIDE.md` §6.
+- [ ] **Remaining spacing/typography calibration** — grid gutter/margin, corner radii, headline/subtitle sizing are still HIG-default guesses, not measured. Update as more Dev Mode values come in.
+- [ ] **Mascot illustration for "No Results"** — still not in `Assets.xcassets` (confirmed empty except `AppIcon`/`AccentColor`/`BrandPurple`) and not extractable as a clean asset from a screenshot. Phase 3 uses an SF Symbol as an explicit placeholder until the developer exports the real asset from Figma.
 
 ## Context
 

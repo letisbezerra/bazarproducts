@@ -47,3 +47,20 @@ final class SkeletonGridView: UIView {
         }
     }
 }
+
+#if DEBUG
+import SwiftUI
+
+private struct SkeletonGridViewPreview: UIViewRepresentable {
+    func makeUIView(context: Context) -> SkeletonGridView {
+        SkeletonGridView()
+    }
+
+    func updateUIView(_ uiView: SkeletonGridView, context: Context) {}
+}
+
+#Preview {
+    SkeletonGridViewPreview()
+        .frame(width: 360, height: 950)
+}
+#endif
