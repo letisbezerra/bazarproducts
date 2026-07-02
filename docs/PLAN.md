@@ -36,7 +36,8 @@ Per the spec-first approach in `CLAUDE.md`, no implementation code gets written 
 3. Implement exactly what the spec describes.
 4. Write the tests the spec listed.
 5. If anything diverged from the spec during implementation (it happens), update the spec doc in the same PR so it stays true, not aspirational.
-6. Open the PR to `develop`, update the status table above.
+6. Before opening the PR: run the `finish-task` skill (QA/merge-readiness validation against this phase's spec and tests) and the `code-review` skill (correctness bugs, reuse/simplification findings on the diff). Fix what they surface.
+7. Open the PR to `develop`, update the status table above.
 
 Spec docs live in `docs/specs/`, numbered to match phase order. They stay in the repo after merge as a paper trail of what was decided and why.
 
