@@ -4,8 +4,9 @@ import XCTest
 @MainActor
 final class ProductListViewModelTests: XCTestCase {
     func test_loadInitialPage_onSuccess_setsLoadedStateAndProducts() async {
-        let useCase = FetchLikedProductsUseCaseMock()
-        useCase.resultsByPage[1] = .success(makePage(items: [makeProduct(id: 1)], hasNextPage: false))
+        let repository = ProductsRepositoryMock()
+        let useCase = DefaultFetchLikedProductsUseCase(repository: repository)
+        repository.resultsByPage[1] = .success(makePage(items: [makeProduct(id: 1)], hasNextPage: false))
         let sut = ProductListViewModel(useCase: useCase)
 
         await sut.loadInitialPage()
@@ -15,8 +16,9 @@ final class ProductListViewModelTests: XCTestCase {
     }
 
     func test_loadInitialPage_onFailure_setsErrorState() async {
-        let useCase = FetchLikedProductsUseCaseMock()
-        useCase.resultsByPage[1] = .failure(NetworkError.transport)
+        let repository = ProductsRepositoryMock()
+        let useCase = DefaultFetchLikedProductsUseCase(repository: repository)
+        repository.resultsByPage[1] = .failure(NetworkError.transport)
         let sut = ProductListViewModel(useCase: useCase)
 
         await sut.loadInitialPage()
@@ -27,9 +29,10 @@ final class ProductListViewModelTests: XCTestCase {
     }
 
     func test_loadNextPageIfNeeded_accumulatesItemsAndStopsWhenNoNextPage() async {
-        let useCase = FetchLikedProductsUseCaseMock()
-        useCase.resultsByPage[1] = .success(makePage(items: [makeProduct(id: 1)], hasNextPage: true))
-        useCase.resultsByPage[2] = .success(makePage(items: [makeProduct(id: 2)], hasNextPage: false))
+        let repository = ProductsRepositoryMock()
+        let useCase = DefaultFetchLikedProductsUseCase(repository: repository)
+        repository.resultsByPage[1] = .success(makePage(items: [makeProduct(id: 1)], hasNextPage: true))
+        repository.resultsByPage[2] = .success(makePage(items: [makeProduct(id: 2)], hasNextPage: false))
         let sut = ProductListViewModel(useCase: useCase)
         await sut.loadInitialPage()
 
@@ -41,13 +44,14 @@ final class ProductListViewModelTests: XCTestCase {
         sut.loadNextPageIfNeeded(currentRow: 1)
         await waitForPagination()
 
-        XCTAssertEqual(useCase.requestedPages, [1, 2])
+        XCTAssertEqual(repository.requestedPages, [1, 2])
     }
 
     func test_loadNextPageIfNeeded_whileAlreadyLoading_doesNotIssueSecondRequest() async {
-        let useCase = FetchLikedProductsUseCaseMock()
-        useCase.resultsByPage[1] = .success(makePage(items: [makeProduct(id: 1)], hasNextPage: true))
-        useCase.resultsByPage[2] = .success(makePage(items: [makeProduct(id: 2)], hasNextPage: true))
+        let repository = ProductsRepositoryMock()
+        let useCase = DefaultFetchLikedProductsUseCase(repository: repository)
+        repository.resultsByPage[1] = .success(makePage(items: [makeProduct(id: 1)], hasNextPage: true))
+        repository.resultsByPage[2] = .success(makePage(items: [makeProduct(id: 2)], hasNextPage: true))
         let sut = ProductListViewModel(useCase: useCase)
         await sut.loadInitialPage()
 
@@ -55,13 +59,14 @@ final class ProductListViewModelTests: XCTestCase {
         sut.loadNextPageIfNeeded(currentRow: 0)
         await waitForPagination()
 
-        XCTAssertEqual(useCase.requestedPages, [1, 2])
+        XCTAssertEqual(repository.requestedPages, [1, 2])
     }
 
     func test_loadNextPageIfNeeded_onFailure_keepsLoadedItemsAndAllowsRetry() async {
-        let useCase = FetchLikedProductsUseCaseMock()
-        useCase.resultsByPage[1] = .success(makePage(items: [makeProduct(id: 1)], hasNextPage: true))
-        useCase.resultsByPage[2] = .failure(NetworkError.transport)
+        let repository = ProductsRepositoryMock()
+        let useCase = DefaultFetchLikedProductsUseCase(repository: repository)
+        repository.resultsByPage[1] = .success(makePage(items: [makeProduct(id: 1)], hasNextPage: true))
+        repository.resultsByPage[2] = .failure(NetworkError.transport)
         let sut = ProductListViewModel(useCase: useCase)
         await sut.loadInitialPage()
 
@@ -71,17 +76,18 @@ final class ProductListViewModelTests: XCTestCase {
         XCTAssertEqual(sut.state, .loaded)
         XCTAssertEqual(sut.displayedProducts, [makeProduct(id: 1)])
 
-        useCase.resultsByPage[2] = .success(makePage(items: [makeProduct(id: 2)], hasNextPage: false))
+        repository.resultsByPage[2] = .success(makePage(items: [makeProduct(id: 2)], hasNextPage: false))
         sut.loadNextPageIfNeeded(currentRow: 0)
         await waitForPagination()
 
         XCTAssertEqual(sut.displayedProducts, [makeProduct(id: 1), makeProduct(id: 2)])
-        XCTAssertEqual(useCase.requestedPages, [1, 2, 2])
+        XCTAssertEqual(repository.requestedPages, [1, 2, 2])
     }
 
     func test_updateSearchText_filtersDisplayedProductsByTitle() async {
-        let useCase = FetchLikedProductsUseCaseMock()
-        useCase.resultsByPage[1] = .success(makePage(
+        let repository = ProductsRepositoryMock()
+        let useCase = DefaultFetchLikedProductsUseCase(repository: repository)
+        repository.resultsByPage[1] = .success(makePage(
             items: [makeProduct(id: 1, title: "vestido azul"), makeProduct(id: 2, title: "sapato preto")],
             hasNextPage: false
         ))
@@ -95,8 +101,9 @@ final class ProductListViewModelTests: XCTestCase {
     }
 
     func test_updateSearchText_isDiacriticInsensitive() async {
-        let useCase = FetchLikedProductsUseCaseMock()
-        useCase.resultsByPage[1] = .success(makePage(
+        let repository = ProductsRepositoryMock()
+        let useCase = DefaultFetchLikedProductsUseCase(repository: repository)
+        repository.resultsByPage[1] = .success(makePage(
             items: [makeProduct(id: 1, title: "vestido café com leite")],
             hasNextPage: false
         ))
@@ -110,8 +117,9 @@ final class ProductListViewModelTests: XCTestCase {
     }
 
     func test_showsNoResultsState_isTrueOnlyWhenLoadedWithNonEmptySearchAndNoMatches() async {
-        let useCase = FetchLikedProductsUseCaseMock()
-        useCase.resultsByPage[1] = .success(makePage(items: [makeProduct(id: 1, title: "vestido azul")], hasNextPage: false))
+        let repository = ProductsRepositoryMock()
+        let useCase = DefaultFetchLikedProductsUseCase(repository: repository)
+        repository.resultsByPage[1] = .success(makePage(items: [makeProduct(id: 1, title: "vestido azul")], hasNextPage: false))
         let sut = ProductListViewModel(useCase: useCase)
 
         XCTAssertFalse(sut.showsNoResultsState)
@@ -126,8 +134,9 @@ final class ProductListViewModelTests: XCTestCase {
     }
 
     func test_clearSearch_restoresFullListAndClearsNoResultsState() async {
-        let useCase = FetchLikedProductsUseCaseMock()
-        useCase.resultsByPage[1] = .success(makePage(items: [makeProduct(id: 1, title: "vestido azul")], hasNextPage: false))
+        let repository = ProductsRepositoryMock()
+        let useCase = DefaultFetchLikedProductsUseCase(repository: repository)
+        repository.resultsByPage[1] = .success(makePage(items: [makeProduct(id: 1, title: "vestido azul")], hasNextPage: false))
         let sut = ProductListViewModel(useCase: useCase)
         await sut.loadInitialPage()
         sut.updateSearchText("sapato")

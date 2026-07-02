@@ -19,6 +19,9 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
         let window = UIWindow(windowScene: windowScene)
         window.rootViewController = UINavigationController(rootViewController: productListViewController)
+        // The Figma design only has a light-mode spec; forcing it avoids inventing
+        // an unverified dark palette (see docs/DESIGN_GUIDE.md).
+        window.overrideUserInterfaceStyle = .light
         window.makeKeyAndVisible()
         self.window = window
     }

@@ -3,7 +3,6 @@ import UIKit
 final class SkeletonGridView: UIView {
     private static let rows = 4
     private static let columns = 2
-    private static let blockHeight: CGFloat = 220
     private static let spacing: CGFloat = 12
 
     override init(frame: CGRect) {
@@ -20,13 +19,15 @@ final class SkeletonGridView: UIView {
         let verticalStack = UIStackView()
         verticalStack.axis = .vertical
         verticalStack.spacing = Self.spacing
+        verticalStack.distribution = .fillEqually
         verticalStack.translatesAutoresizingMaskIntoConstraints = false
         addSubview(verticalStack)
 
         NSLayoutConstraint.activate([
             verticalStack.topAnchor.constraint(equalTo: topAnchor),
             verticalStack.leadingAnchor.constraint(equalTo: leadingAnchor),
-            verticalStack.trailingAnchor.constraint(equalTo: trailingAnchor)
+            verticalStack.trailingAnchor.constraint(equalTo: trailingAnchor),
+            verticalStack.bottomAnchor.constraint(equalTo: bottomAnchor)
         ])
 
         for _ in 0..<Self.rows {
@@ -39,7 +40,6 @@ final class SkeletonGridView: UIView {
                 let block = UIView()
                 block.backgroundColor = .systemGray6
                 block.layer.cornerRadius = 12
-                block.heightAnchor.constraint(equalToConstant: Self.blockHeight).isActive = true
                 rowStack.addArrangedSubview(block)
             }
 

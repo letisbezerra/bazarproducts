@@ -5,7 +5,7 @@ final class FetchLikedProductsUseCaseTests: XCTestCase {
     func test_execute_onSuccess_returnsRepositoryResultUnchanged() async throws {
         let repository = ProductsRepositoryMock()
         let expectedPage = ProductsPage(items: [], hasNextPage: true)
-        repository.result = .success(expectedPage)
+        repository.resultsByPage[3] = .success(expectedPage)
         let sut = DefaultFetchLikedProductsUseCase(repository: repository)
 
         let page = try await sut.execute(page: 3)
@@ -16,7 +16,7 @@ final class FetchLikedProductsUseCaseTests: XCTestCase {
 
     func test_execute_onFailure_rethrowsRepositoryError() async {
         let repository = ProductsRepositoryMock()
-        repository.result = .failure(NetworkError.transport)
+        repository.resultsByPage[1] = .failure(NetworkError.transport)
         let sut = DefaultFetchLikedProductsUseCase(repository: repository)
 
         do {

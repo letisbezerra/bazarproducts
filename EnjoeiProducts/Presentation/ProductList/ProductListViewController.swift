@@ -32,18 +32,41 @@ final class ProductListViewController: UIViewController {
         return cell
     }
 
-    private let searchBar: UISearchBar = {
-        let searchBar = UISearchBar()
-        searchBar.placeholder = "buscar"
-        searchBar.showsCancelButton = false
-        searchBar.searchBarStyle = .minimal
-        return searchBar
+    // A plain UITextField instead of UISearchBar: UISearchBar's `.minimal` style
+    // reasserts its own capsule-shaped background and left-side icon internally,
+    // fighting any attempt to match Figma's near-rectangular box with a trailing icon.
+    private let searchField: UITextField = {
+        let textField = UITextField()
+        textField.placeholder = "buscar"
+        textField.font = AppFont.uiFont(size: 15, weight: .regular)
+        textField.backgroundColor = .systemBackground
+        textField.layer.cornerRadius = 8
+        textField.layer.borderWidth = 1
+        textField.layer.borderColor = UIColor(named: "HeaderDivider")?.cgColor
+        textField.returnKeyType = .search
+        textField.clearButtonMode = .never
+        textField.enablesReturnKeyAutomatically = false
+
+        let leftPadding = UIView(frame: CGRect(x: 0, y: 0, width: 16, height: 1))
+        textField.leftView = leftPadding
+        textField.leftViewMode = .always
+
+        let searchIcon = UIImageView(image: UIImage(systemName: "magnifyingglass"))
+        searchIcon.tintColor = .secondaryLabel
+        searchIcon.contentMode = .scaleAspectFit
+        let rightContainer = UIView(frame: CGRect(x: 0, y: 0, width: 36, height: 20))
+        searchIcon.frame = CGRect(x: 0, y: 2, width: 16, height: 16)
+        rightContainer.addSubview(searchIcon)
+        textField.rightView = rightContainer
+        textField.rightViewMode = .always
+
+        return textField
     }()
 
     private let clearSearchButton: UIButton = {
         var configuration = UIButton.Configuration.plain()
         configuration.title = "limpar busca"
-        configuration.baseForegroundColor = UIColor(named: "BrandPurple")
+        configuration.baseForegroundColor = BrandColor.uiColor
         let button = UIButton(configuration: configuration)
         button.isHidden = true
         return button
@@ -68,7 +91,7 @@ final class ProductListViewController: UIViewController {
     private lazy var retryButton: UIButton = {
         var configuration = UIButton.Configuration.filled()
         configuration.title = "tentar novamente"
-        configuration.baseBackgroundColor = UIColor(named: "BrandPurple")
+        configuration.baseBackgroundColor = BrandColor.uiColor
         let button = UIButton(configuration: configuration)
         button.addTarget(self, action: #selector(retryTapped), for: .touchUpInside)
         return button
@@ -99,7 +122,8 @@ final class ProductListViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
-        title = "Favoritos"
+        navigationItem.titleView = makeLogoView()
+        configureNavigationBarDivider()
 
         setUpViews()
 
@@ -112,14 +136,45 @@ final class ProductListViewController: UIViewController {
         }
     }
 
+    /// Figma measures the header bar's bottom border as 1.5px `#F1EEEC` -- the system
+    /// nav bar's default hairline is a different gray, so it's recolored here to match.
+    private func configureNavigationBarDivider() {
+        let appearance = UINavigationBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = .systemBackground
+        appearance.shadowColor = UIColor(named: "HeaderDivider")
+
+        navigationController?.navigationBar.standardAppearance = appearance
+        navigationController?.navigationBar.scrollEdgeAppearance = appearance
+        navigationController?.navigationBar.compactAppearance = appearance
+    }
+
+    private func makeLogoView() -> UIImageView {
+        let logoImageView = UIImageView(image: UIImage(named: "EnjoeiLogo"))
+        logoImageView.contentMode = .scaleAspectFit
+        logoImageView.isAccessibilityElement = true
+        logoImageView.accessibilityLabel = "Enjoei"
+        logoImageView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            logoImageView.widthAnchor.constraint(equalToConstant: 32),
+            logoImageView.heightAnchor.constraint(equalToConstant: 32)
+        ])
+        return logoImageView
+    }
+
     private func setUpViews() {
-        searchBar.delegate = self
+        searchField.addTarget(self, action: #selector(searchFieldDidChange), for: .editingChanged)
         clearSearchButton.addTarget(self, action: #selector(clearSearchTapped), for: .touchUpInside)
+
+        let dismissKeyboardTap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+        dismissKeyboardTap.cancelsTouchesInView = false
+        dismissKeyboardTap.delegate = self
+        view.addGestureRecognizer(dismissKeyboardTap)
 
         addChild(emptyStateHostingController)
         emptyStateHostingController.didMove(toParent: self)
 
-        let searchRow = UIStackView(arrangedSubviews: [searchBar, clearSearchButton])
+        let searchRow = UIStackView(arrangedSubviews: [searchField, clearSearchButton])
         searchRow.axis = .horizontal
         searchRow.alignment = .center
         searchRow.spacing = 8
@@ -137,6 +192,13 @@ final class ProductListViewController: UIViewController {
             searchRow.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             searchRow.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
 
+            // Neither searchRow nor collectionView has both edges pinned independently of
+            // the other, so without an explicit height here Auto Layout treats searchRow's
+            // height as a free variable and can inflate it arbitrarily to satisfy the rest
+            // of the chain -- pin it to Figma's measured 335x42 search box.
+            searchRow.heightAnchor.constraint(equalToConstant: 42),
+            searchField.heightAnchor.constraint(equalToConstant: 42),
+
             collectionView.topAnchor.constraint(equalTo: searchRow.bottomAnchor, constant: 8),
             collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
@@ -145,6 +207,7 @@ final class ProductListViewController: UIViewController {
             skeletonView.topAnchor.constraint(equalTo: collectionView.topAnchor),
             skeletonView.leadingAnchor.constraint(equalTo: collectionView.leadingAnchor),
             skeletonView.trailingAnchor.constraint(equalTo: collectionView.trailingAnchor),
+            skeletonView.bottomAnchor.constraint(equalTo: collectionView.bottomAnchor),
 
             errorView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             errorView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
@@ -167,20 +230,13 @@ final class ProductListViewController: UIViewController {
     }
 
     private func render() {
-        clearSearchButton.isHidden = viewModel.searchText.isEmpty
-
-        if viewModel.isLoadingNextPage {
-            paginationIndicator.startAnimating()
-        } else {
-            paginationIndicator.stopAnimating()
-        }
-
         switch viewModel.state {
         case .loading:
             skeletonView.isHidden = false
             collectionView.isHidden = true
             errorView.isHidden = true
             emptyStateHostingController.view.isHidden = true
+            paginationIndicator.stopAnimating()
 
         case .loaded:
             skeletonView.isHidden = true
@@ -190,13 +246,24 @@ final class ProductListViewController: UIViewController {
             collectionView.isHidden = showsEmptyState
             applySnapshot()
 
+            if viewModel.isLoadingNextPage && !showsEmptyState {
+                paginationIndicator.startAnimating()
+            } else {
+                paginationIndicator.stopAnimating()
+            }
+
         case .error(let message):
             skeletonView.isHidden = true
             collectionView.isHidden = true
             emptyStateHostingController.view.isHidden = true
             errorView.isHidden = false
             errorLabel.text = message
+            paginationIndicator.stopAnimating()
         }
+    }
+
+    private func updateClearSearchButtonVisibility() {
+        clearSearchButton.isHidden = (searchField.text ?? "").isEmpty
     }
 
     private func applySnapshot() {
@@ -207,9 +274,10 @@ final class ProductListViewController: UIViewController {
     }
 
     private func clearSearch() {
-        searchBar.text = ""
-        searchBar.resignFirstResponder()
+        searchField.text = ""
+        searchField.resignFirstResponder()
         viewModel.clearSearch()
+        updateClearSearchButtonVisibility()
     }
 
     @objc
@@ -218,8 +286,20 @@ final class ProductListViewController: UIViewController {
     }
 
     @objc
+    private func searchFieldDidChange() {
+        let text = searchField.text ?? ""
+        viewModel.updateSearchText(text)
+        updateClearSearchButtonVisibility()
+    }
+
+    @objc
     private func retryTapped() {
         Task { await viewModel.loadInitialPage() }
+    }
+
+    @objc
+    private func dismissKeyboard() {
+        view.endEditing(true)
     }
 
     /// Each card is square (matches the Figma measurement of a 163x163 tile at the
@@ -260,9 +340,43 @@ extension ProductListViewController: UICollectionViewDataSourcePrefetching {
 
 extension ProductListViewController: UICollectionViewDelegate {}
 
-extension ProductListViewController: UISearchBarDelegate {
-    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
-        viewModel.updateSearchText(searchText)
-        clearSearchButton.isHidden = searchText.isEmpty
+extension ProductListViewController: UIGestureRecognizerDelegate {
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        !(touch.view?.isDescendant(of: searchField) ?? false)
     }
 }
+
+#if DEBUG
+import SwiftUI
+
+private struct PreviewFetchLikedProductsUseCase: FetchLikedProductsUseCase {
+    func execute(page: Int) async throws -> ProductsPage {
+        let items = (1...10).map { index in
+            Product(
+                id: index,
+                title: "produto \(index)",
+                imageURL: nil,
+                currentPrice: 56.0,
+                originalPrice: index.isMultiple(of: 2) ? 80.0 : nil,
+                discountPercentage: index.isMultiple(of: 2) ? 30 : nil
+            )
+        }
+        return ProductsPage(items: items, hasNextPage: false)
+    }
+}
+
+private struct ProductListViewControllerPreview: UIViewControllerRepresentable {
+    func makeUIViewController(context: Context) -> UIViewController {
+        let viewController = ProductListViewController(
+            viewModel: ProductListViewModel(useCase: PreviewFetchLikedProductsUseCase())
+        )
+        return UINavigationController(rootViewController: viewController)
+    }
+
+    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
+}
+
+#Preview("Results") {
+    ProductListViewControllerPreview()
+}
+#endif

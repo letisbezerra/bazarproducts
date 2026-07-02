@@ -5,7 +5,8 @@ Visual reference for Phase 3 (screen) and Phase 4 (polish), read directly from a
 ## 1. Header
 
 - White bar, full width, fixed at the top of every screen.
-- Centered circular logo mark: dark plum/maroon circle, white lowercase "e" (Enjoei brand mark). Not the app's own asset to design — likely already provided as a brand asset, or recreate simply with `AccentColor` + SF Symbol/text if no asset is exported.
+- Centered circular logo mark: dark plum/maroon circle, white lowercase "e" (Enjoei brand mark). **Resolved**: sourced from Enjoei's own public PWA manifest icon (`https://www.enjoei.com.br/manifest-icons/enjoei-512.png`) — a real Enjoei brand asset, not a recreation — whose dominant color measured exactly `#61005D`, matching the `BrandPurple` value already confirmed via Figma Dev Mode. The source asset ships as a flat purple "e" mark with no circular backing (`maskable` PWA icons are drawn that way on purpose), so it was recolored (purple ink → white, white background → `BrandPurple`) and composited onto a filled circle to match the Figma header exactly. Stored as `EnjoeiLogo` in `Assets.xcassets`, shown via `navigationItem.titleView` in `ProductListViewController` instead of a text title.
+- **Header bar container**: Figma Dev Mode measures the bar itself as 375×60pt, white background, with a 1.5pt bottom border in `#F1EEEC` (stored as the `HeaderDivider` color asset). **Deliberate developer call**: kept the system `UINavigationBar` at its default compact height (44pt) instead of building a fully custom 60pt header view — only the border color was matched exactly (via `UINavigationBarAppearance.shadowColor`), trading the extra ~16pt of header height for the stability of the system nav bar across iOS versions/safe areas.
 
 ## 2. Search bar
 
@@ -41,7 +42,7 @@ Search bar + its "limpar busca" link stay visible/pinned at the top even in this
 1. **Headline**, bold, two lines: "ué, não encontramos nadinha".
 2. **Subtitle**, regular weight, gray, directly below: "que tal recomeçar do começo?".
 3. **"limpar busca" button** — dark plum/maroon pill, bold white text, sized to its content (not full-width), some vertical gap above it. This is a *second* "limpar busca" affordance distinct from the inline link next to the search field — both exist simultaneously in this state.
-4. **Mascot illustration** — a pink cartoon animal character (Enjoei brand mascot) holding a smartphone with a smiling face on its screen, surrounded by small scattered decorative shapes (a cloud, a small plant, a bicycle silhouette, an "X" mark). Positioned below the button, appears lower/right in the available space. **This exact asset is not something extractable from the shared screenshot as a clean, transparent image file** — still an open blocker (`docs/PLAN.md`) until the developer exports it from Figma, or we agree on a stand-in.
+4. **Mascot illustration** — a pink cartoon animal character (Enjoei brand mascot) holding a smartphone with a smiling face on its screen, surrounded by small scattered decorative shapes (a cloud, a small plant, a bicycle silhouette, an "X" mark). Positioned below the button, appears lower/right in the available space. **Resolved**: the developer exported the real asset from Figma, stored as `EmptyStateMascot` in `Assets.xcassets` and used directly in `EmptyStateView.swift`, replacing the earlier SF Symbol placeholder.
 
 ## 6. Color/type — measured values from Figma Dev Mode
 
@@ -59,8 +60,11 @@ The developer shared Figma Dev Mode inspector crops for the price/badge elements
 - **Primary text** (headline, no-discount price): near-black, matches `.label`.
 - **Secondary text**: medium gray, matches `.secondaryLabel` — subtitle, strikethrough original price, search placeholder.
 - **Surfaces**: white for the price pill/search field; light gray (`.systemGray6`) for skeleton blocks and the image placeholder background.
+- **Appearance mode**: the Figma flow only has a light-mode spec — no dark-mode frames exist to validate against. Rather than invent an unverified dark palette, the app forces light mode app-wide (`window.overrideUserInterfaceStyle = .light` in `SceneDelegate`), so fixed-color surfaces like the white price pill and system-adaptive colors like `.systemBackground`/`.label` never drift from what was actually designed.
 
-Still unmeasured: headline/subtitle exact size, the search bar's own dimensions, the "limpar busca" button's exact padding. Update this section as more Dev Mode values come in.
+- **Search bar container**: 42pt tall (Dev Mode measures a 335×42 box at Figma's 375pt reference width, but the side margins are deliberately kept at 16pt — same as the grid's screen margin — so the search bar's edges align exactly with the card grid below it, confirmed against the running app). Implemented as an explicit height constraint on both the search row and the `UISearchBar` itself (without it, `UIStackView` has no natural cross-axis size to anchor to when neither it nor the adjacent `UICollectionView` has an independent height, and Auto Layout resolves the ambiguity by inflating the row instead of the grid).
+
+Still unmeasured: headline/subtitle exact size, the "limpar busca" button's exact padding. Update this section as more Dev Mode values come in.
 
 ## How to use this doc
 

@@ -18,7 +18,7 @@ final class ProductCell: UICollectionViewCell {
         let label = UILabel()
         label.font = AppFont.uiFont(size: 10, weight: .semibold)
         label.textColor = .white
-        label.backgroundColor = UIColor(named: "BrandPurple")
+        label.backgroundColor = BrandColor.uiColor
         label.textAlignment = .center
         label.layer.cornerRadius = 6
         label.layer.masksToBounds = true
@@ -73,7 +73,7 @@ final class ProductCell: UICollectionViewCell {
             badgeLabel.text = "\(discountPercentage)% off"
             badgeLabel.isHidden = false
 
-            currentPriceLabel.textColor = UIColor(named: "BrandPurple")
+            currentPriceLabel.textColor = BrandColor.uiColor
             originalPriceLabel.attributedText = NSAttributedString(
                 string: PriceFormatter.string(from: originalPrice),
                 attributes: [

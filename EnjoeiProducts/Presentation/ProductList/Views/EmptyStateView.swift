@@ -18,19 +18,16 @@ struct EmptyStateView: View {
                     .foregroundStyle(.white)
                     .padding(.horizontal, 24)
                     .padding(.vertical, 12)
-                    .background(Capsule().fill(Color("BrandPurple")))
+                    .background(Capsule().fill(BrandColor.color))
             }
 
             Spacer()
 
-            HStack {
-                Spacer()
-                // Placeholder for the Figma mascot illustration -- not yet exported as an asset,
-                // see the open blocker in docs/PLAN.md.
-                Image(systemName: "figure.wave")
-                    .font(.system(size: 100))
-                    .foregroundStyle(Color("BrandPurple").opacity(0.5))
-            }
+            Image("EmptyStateMascot")
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(maxWidth: .infinity)
+                .accessibilityHidden(true)
         }
         .padding(24)
     }

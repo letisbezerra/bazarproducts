@@ -36,15 +36,20 @@ final class ProductListViewModel {
         self.logger = logger
     }
 
+    private var trimmedSearchText: String {
+        searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     var displayedProducts: [Product] {
-        guard !searchText.isEmpty else { return products }
+        let query = trimmedSearchText
+        guard !query.isEmpty else { return products }
         return products.filter {
-            $0.title.range(of: searchText, options: [.caseInsensitive, .diacriticInsensitive]) != nil
+            $0.title.range(of: query, options: [.caseInsensitive, .diacriticInsensitive]) != nil
         }
     }
 
     var showsNoResultsState: Bool {
-        state == .loaded && !searchText.isEmpty && displayedProducts.isEmpty
+        state == .loaded && !trimmedSearchText.isEmpty && displayedProducts.isEmpty
     }
 
     func loadInitialPage() async {
