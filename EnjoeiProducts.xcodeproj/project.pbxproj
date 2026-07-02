@@ -36,22 +36,16 @@
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		55C22B922FF5C35B00D14F15 /* EnjoeiProducts */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = EnjoeiProducts;
 			sourceTree = "<group>";
 		};
 		55C22BA02FF5C35E00D14F15 /* EnjoeiProductsTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = EnjoeiProductsTests;
 			sourceTree = "<group>";
 		};
 		55C22BAA2FF5C35E00D14F15 /* EnjoeiProductsUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = EnjoeiProductsUITests;
 			sourceTree = "<group>";
 		};
@@ -281,7 +275,7 @@
 		};
 		BC841AB23F3314E993E15B06 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			productRef = 21C5144EEB64A4E359CA60E5 /* plugin:SwiftLintBuildToolPlugin */;
+			productRef = 21C5144EEB64A4E359CA60E5 /* SwiftLintBuildToolPlugin */;
 		};
 /* End PBXTargetDependency section */
 
@@ -616,7 +610,7 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		21C5144EEB64A4E359CA60E5 /* plugin:SwiftLintBuildToolPlugin */ = {
+		21C5144EEB64A4E359CA60E5 /* SwiftLintBuildToolPlugin */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 07B4BCC1BF1486D0C66DA9DB /* XCRemoteSwiftPackageReference "SwiftLint" */;
 			productName = "plugin:SwiftLintBuildToolPlugin";
