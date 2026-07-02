@@ -16,7 +16,7 @@ iOS Pleno technical test for Enjoei — a liked products listing screen with loa
 To run tests: select the `EnjoeiProducts` scheme, `Cmd+U`, or from the CLI:
 
 ```
-xcodebuild -project EnjoeiProducts.xcodeproj -scheme EnjoeiProducts -destination 'platform=iOS Simulator,name=iPhone 16' test
+xcodebuild -project EnjoeiProducts.xcodeproj -scheme EnjoeiProducts -destination 'platform=iOS Simulator,name=iPhone 17' test
 ```
 
 ## Technical choices
