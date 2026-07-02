@@ -1,6 +1,6 @@
 import Foundation
 
-struct Product: Equatable, Identifiable {
+struct Product: Equatable, Hashable, Identifiable {
     let id: Int
     let title: String
     let imageURL: URL?
