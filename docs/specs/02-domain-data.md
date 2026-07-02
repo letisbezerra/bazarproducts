@@ -124,7 +124,7 @@ Confirmed from this real response:
       static func map(_ dto: ProductDTO) -> Product
   }
   ```
-  Discount logic: if `price.sale` exists and is less than `price.listed`, `currentPrice = sale`, `originalPrice = listed`, `discountPercentage = Int(((listed - sale) / listed * 100).rounded())`. Otherwise `currentPrice = listed`, `originalPrice = nil`, `discountPercentage = nil`. `imageURL` comes from `ImageURLBuilder.url(imagePublicId:)` (Phase 1) — `nil` is a valid, handled state (Phase 3 shows a placeholder), not an error.
+  Discount logic (revised after code review — see "What actually happened" below): a discount is only computed when `listed > 0`, `sale` exists, `sale >= 0`, and `sale < listed`; and only kept if the resulting `discountPercentage` rounds to something greater than 0. Any input failing one of these guards falls back to `currentPrice = listed`, `originalPrice = nil`, `discountPercentage = nil`. `imageURL` comes from `ImageURLBuilder.url(imagePublicId:)` (Phase 1) — `nil` is a valid, handled state (Phase 3 shows a placeholder), not an error.
 - `Data/Repositories/ProductsRepositoryImpl.swift`
   ```swift
   final class ProductsRepositoryImpl: ProductsRepository {
@@ -137,11 +137,25 @@ Confirmed from this real response:
 
 ## Decisions & edge cases
 
-- **Discount edge case**: `price.sale` present but *not* less than `price.listed` (e.g. equal, or a data anomaly where sale > listed) is treated as "no real discount" — `currentPrice = listed`, no badge — rather than showing a 0%-or-negative discount tag. Not observed in the live sample, but cheap to guard against since the math would otherwise produce a nonsensical badge.
+- **Discount edge case**: `price.sale` present but *not* less than `price.listed` (e.g. equal, or a data anomaly where sale > listed) is treated as "no real discount" — `currentPrice = listed`, no badge — rather than showing a 0%-or-negative discount tag.
 - **`imageURL == nil`** is not a `Product`-level error — a product with a malformed/empty `image_public_id` still has a title and price worth showing; Phase 3's cell shows a placeholder image, matching how `ImageURLBuilder` was already designed in Phase 1 to return `nil` rather than throw.
 - **Pagination**: `hasNextPage` is derived once, in the repository, from `pagination.nextPage != nil` — the ViewModel (Phase 3) never inspects the DTO directly, keeping the `next_page == nil` API quirk contained to this layer.
 - **`FetchLikedProductsUseCase`**: no caching, no combining multiple repository calls — a literal pass-through, matching `docs/ARCHITECTURE.md`'s "no business rule beyond delegation" framing already used for this phase's planning.
 - **DTO `CodingKeys`**: explicit for every `snake_case` field rather than `.convertFromSnakeCase`, continuing Phase 1's decision to keep decoding explicit and greppable.
+
+## What actually happened (diverged from the original plan)
+
+A rigorous code-review pass on the first implementation found 3 confirmed numeric bugs in the original, simpler discount guard (`guard let sale = dto.price.sale, sale < dto.price.listed`), none observed in the live sample but all reachable with plausible or even ordinary data:
+
+- **Division-by-zero crash**: `listed == 0` with any `sale` below it passed the original guard and reached `(listed - sale) / listed`, producing `Infinity`; `Int(Infinity.rounded())` traps and crashes the app. Reproduced directly in a Swift interpreter.
+- **Unvalidated negative prices**: a negative `sale` (e.g. `-10.0`) with a positive `listed` passed the guard with no lower-bound check, producing a negative `currentPrice` and a >100% discount badge (verified: `listed=50, sale=-10` → `currentPrice=-10.0`, `discountPercentage=120`).
+- **0%-badge inconsistency**: an ordinary near-equal price pair (e.g. `listed=80.00`, `sale=79.90` — a realistic markdown, not a manufactured edge case) rounds `discountPercentage` to `0` while still setting `originalPrice` non-nil, breaking this doc's own stated invariant that both fields are `nil` together whenever there's no meaningful discount.
+
+Fixed by tightening the guard to `listed > 0, sale >= 0, sale < listed`, and adding a second guard after computing `discountPercentage` that falls back to "no discount" if the rounded percentage isn't greater than 0. Both guards route through a shared private `noDiscountProduct(dto:imageURL:)` helper instead of duplicating the "no discount" `Product` construction. Test cases added: `test_map_withZeroListedPrice_doesNotCrashAndHasNoDiscount`, `test_map_withNegativeSale_treatedAsNoDiscount`, `test_map_withDiscountRoundingToZeroPercent_treatedAsNoDiscount`.
+
+The same review also flagged `EnjoeiProductsTests/Mocks/HTTPClientMock.swift` using `fatalError` on a stub type mismatch or unset result — not reachable by today's tests, but a landmine for Phase 3+ once this mock is reused for more endpoints (a wrong stub would crash the entire test process instead of failing one test). Fixed by throwing a small `HTTPClientMockError` enum instead, which `send(_:)` can propagate normally since it's already `throws`.
+
+Two other review findings were discussed and deliberately left as-is: the endpoint path being inline in `ProductsRepositoryImpl` rather than an `Endpoint` factory (this app has exactly one repository method; extracting a factory now would be speculative), and `FetchLikedProductsUseCase` being a pure pass-through (already justified above by the job posting's explicit Clean Architecture/UseCase requirement, not a technical need).
 
 ## Files to be created
 
@@ -163,6 +177,9 @@ Confirmed from this real response:
 - DTO with `sale >= listed` (constructed edge case, not from live data) → treated as no discount.
 - DTO with a valid `image_public_id` → `imageURL` matches `ImageURLBuilder`'s output exactly.
 - DTO with empty `image_public_id` → `imageURL == nil`, mapping still succeeds (no throw).
+- DTO with `listed == 0` and a negative `sale` → no crash, treated as no discount (added after code review).
+- DTO with a negative `sale` and a positive `listed` → treated as no discount, not a negative price (added after code review).
+- DTO with a discount that rounds to 0% (e.g. `listed=80.00`, `sale=79.90`) → treated as no discount (added after code review).
 
 `EnjoeiProductsTests/Data/ProductsRepositoryImplTests.swift` (via a `HTTPClientMock` conforming to `HTTPClient`, no real network calls):
 - Success: valid JSON → returns `ProductsPage` with mapped items and `hasNextPage` matching `next_page`.
