@@ -10,7 +10,7 @@ final class URLSessionHTTPClient: HTTPClient {
     init(
         baseURL: URL = URLSessionHTTPClient.defaultBaseURL,
         session: URLSession = .shared,
-        logger: AppLogger = OSLogAppLogger()
+        logger: AppLogger = AppLogger()
     ) {
         self.baseURL = baseURL
         self.session = session
@@ -59,7 +59,7 @@ final class URLSessionHTTPClient: HTTPClient {
         }
 
         var request = URLRequest(url: url)
-        request.httpMethod = endpoint.method
+        request.httpMethod = endpoint.method.rawValue
         return request
     }
 }

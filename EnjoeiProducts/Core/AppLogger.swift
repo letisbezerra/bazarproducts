@@ -6,11 +6,7 @@ enum LogCategory: String {
     case viewModel
 }
 
-protocol AppLogger {
-    func log(_ message: String, category: LogCategory)
-}
-
-struct OSLogAppLogger: AppLogger {
+struct AppLogger {
     private static let subsystem = Bundle.main.bundleIdentifier ?? "EnjoeiProducts"
 
     func log(_ message: String, category: LogCategory) {

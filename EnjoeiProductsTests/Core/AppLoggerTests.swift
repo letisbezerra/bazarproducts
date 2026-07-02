@@ -3,7 +3,7 @@ import XCTest
 
 final class AppLoggerTests: XCTestCase {
     func test_log_doesNotCrashForAnyCategory() {
-        let logger = OSLogAppLogger()
+        let logger = AppLogger()
 
         logger.log("test message", category: .network)
         logger.log("test message", category: .viewModel)
