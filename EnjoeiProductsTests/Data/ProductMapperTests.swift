@@ -70,4 +70,34 @@ final class ProductMapperTests: XCTestCase {
         XCTAssertNil(product.imageURL)
         XCTAssertEqual(product.title, "item")
     }
+
+    func test_map_withZeroListedPrice_doesNotCrashAndHasNoDiscount() {
+        let dto = ProductDTO(id: 1, title: "anomalous item", imagePublicId: "", price: PriceDTO(listed: 0.0, sale: -1.0))
+
+        let product = ProductMapper.map(dto)
+
+        XCTAssertEqual(product.currentPrice, 0.0)
+        XCTAssertNil(product.originalPrice)
+        XCTAssertNil(product.discountPercentage)
+    }
+
+    func test_map_withNegativeSale_treatedAsNoDiscount() {
+        let dto = ProductDTO(id: 1, title: "anomalous item", imagePublicId: "", price: PriceDTO(listed: 50.0, sale: -10.0))
+
+        let product = ProductMapper.map(dto)
+
+        XCTAssertEqual(product.currentPrice, 50.0)
+        XCTAssertNil(product.originalPrice)
+        XCTAssertNil(product.discountPercentage)
+    }
+
+    func test_map_withDiscountRoundingToZeroPercent_treatedAsNoDiscount() {
+        let dto = ProductDTO(id: 1, title: "item", imagePublicId: "", price: PriceDTO(listed: 80.0, sale: 79.9))
+
+        let product = ProductMapper.map(dto)
+
+        XCTAssertEqual(product.currentPrice, 80.0)
+        XCTAssertNil(product.originalPrice)
+        XCTAssertNil(product.discountPercentage)
+    }
 }

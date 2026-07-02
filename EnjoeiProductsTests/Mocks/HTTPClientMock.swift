@@ -1,5 +1,10 @@
 @testable import EnjoeiProducts
 
+enum HTTPClientMockError: Error {
+    case stubbedValueTypeMismatch
+    case resultNotSet
+}
+
 final class HTTPClientMock: HTTPClient {
     var result: Result<Any, Error>?
     private(set) var requestedEndpoints: [Endpoint] = []
@@ -10,13 +15,13 @@ final class HTTPClientMock: HTTPClient {
         switch result {
         case .success(let value):
             guard let typed = value as? T else {
-                fatalError("HTTPClientMock stubbed value doesn't match the requested type \(T.self)")
+                throw HTTPClientMockError.stubbedValueTypeMismatch
             }
             return typed
         case .failure(let error):
             throw error
         case .none:
-            fatalError("HTTPClientMock.result not set before calling send(_:)")
+            throw HTTPClientMockError.resultNotSet
         }
     }
 }
