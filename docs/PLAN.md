@@ -17,11 +17,9 @@ This is the durable copy of our build-out plan, kept in the repo so any future s
 
 Things a phase surfaced that only the developer can resolve (a design asset, a product decision, an account permission). Checked off as resolved, not deleted, so the history of what needed a human call stays visible.
 
-- [ ] **No visual access to the Figma file at all** (Phase 3 onward): I only have the password from `docs/TEST_BRIEF.md` — no browser/design-tool access to actually open Figma and read exact colors, spacing, typography, or export assets. `docs/ARCHITECTURE.md`'s screen-states table is a *textual* description, not a pixel spec. Concretely, until the developer checks the running app against the real Figma screens:
-  - **Mascot illustration for "No Results"** — not in `Assets.xcassets` (confirmed empty except `AppIcon`/`AccentColor`). Phase 3 uses an SF Symbol as an explicit placeholder.
-  - **Grid spacing, insets, corner radii, colors, font sizes/weights** in `ProductCell`/the Compositional Layout — Phase 3 uses reasonable iOS HIG defaults (8pt/16pt spacing, system fonts, `.systemBackground`/`.label` semantic colors), not measured values from the design file.
-  - **Currency formatting** (`R$ 56,00` style) — assumed standard `pt_BR` `NumberFormatter` currency style, not confirmed against a Figma label.
-  Since visual fidelity is a stated hard requirement (`CLAUDE.md`: "matching the design spec's spacing, color, and typography exactly, not an approximation"), this gap needs the developer's own side-by-side comparison against Figma before Phase 3 can be called visually done — an AI agent without design-tool access cannot close this one alone.
+- [x] **No visual access to the Figma file at all** — partially resolved: the developer shared a screenshot of the six flow frames (Loading, Results, Pagination, Search Empty/Filled, No Results), analyzed into `docs/DESIGN_GUIDE.md`. This gives real layout/behavior detail (badge format, price ordering, search bar/"limpar busca" behavior, empty-state structure) that wasn't in `docs/ARCHITECTURE.md`'s text-only table before.
+- [ ] **Exact pt/spacing/hex-color calibration** — `docs/DESIGN_GUIDE.md` is a best-effort visual read of a screenshot, not measured values. Decision: build Phase 3 now with reasonable HIG-default numbers, then calibrate spacing/colors together once it's running, rather than blocking implementation on pixel-exact values upfront.
+- [ ] **Mascot illustration for "No Results"** — still not in `Assets.xcassets` (confirmed empty except `AppIcon`/`AccentColor`) and not extractable as a clean asset from a screenshot. Phase 3 uses an SF Symbol as an explicit placeholder until the developer exports the real asset from Figma.
 
 ## Context
 
