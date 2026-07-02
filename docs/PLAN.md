@@ -17,7 +17,11 @@ This is the durable copy of our build-out plan, kept in the repo so any future s
 
 Things a phase surfaced that only the developer can resolve (a design asset, a product decision, an account permission). Checked off as resolved, not deleted, so the history of what needed a human call stays visible.
 
-- [ ] **Mascot illustration for the "No Results" empty state** (Phase 3, `docs/ARCHITECTURE.md` §1's "No Results" row): the Figma file has this asset, but nothing has been exported into `Assets.xcassets` yet (confirmed empty except `AppIcon`/`AccentColor`). Until it's provided, Phase 3 uses an SF Symbol as a placeholder and calls this out explicitly rather than silently approximating the real design — visual fidelity is a stated priority (`CLAUDE.md`), so a placeholder must stay visibly flagged, not quietly treated as final.
+- [ ] **No visual access to the Figma file at all** (Phase 3 onward): I only have the password from `docs/TEST_BRIEF.md` — no browser/design-tool access to actually open Figma and read exact colors, spacing, typography, or export assets. `docs/ARCHITECTURE.md`'s screen-states table is a *textual* description, not a pixel spec. Concretely, until the developer checks the running app against the real Figma screens:
+  - **Mascot illustration for "No Results"** — not in `Assets.xcassets` (confirmed empty except `AppIcon`/`AccentColor`). Phase 3 uses an SF Symbol as an explicit placeholder.
+  - **Grid spacing, insets, corner radii, colors, font sizes/weights** in `ProductCell`/the Compositional Layout — Phase 3 uses reasonable iOS HIG defaults (8pt/16pt spacing, system fonts, `.systemBackground`/`.label` semantic colors), not measured values from the design file.
+  - **Currency formatting** (`R$ 56,00` style) — assumed standard `pt_BR` `NumberFormatter` currency style, not confirmed against a Figma label.
+  Since visual fidelity is a stated hard requirement (`CLAUDE.md`: "matching the design spec's spacing, color, and typography exactly, not an approximation"), this gap needs the developer's own side-by-side comparison against Figma before Phase 3 can be called visually done — an AI agent without design-tool access cannot close this one alone.
 
 ## Context
 
