@@ -62,6 +62,8 @@ Every phase in this plan — no exceptions — goes through the same three stage
 
 Spec docs live in `docs/specs/`, numbered to match phase order. They stay in the repo after merge as a paper trail of what was decided and why.
 
+**For a large phase implemented in sub-steps** (e.g. Phase 3 built as ViewModel → view layer → wiring, each with its own build/test cycle): the End-stage step 1 hand-off applies at the end of *each* sub-step, not only once at the very end of the whole phase. Report progress and a validation step-by-step after every sub-step completes, not just at the final one — the developer confirms incrementally, not in one batch at the end.
+
 ## Phase 0 — Standards & tooling (`feature/project-standards`)
 
 Goal: lock in conventions before writing feature code, and add the CI differential the job posting mentions.
