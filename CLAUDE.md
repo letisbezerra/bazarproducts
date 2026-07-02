@@ -2,7 +2,7 @@
 
 Context: iOS Pleno technical test for Enjoei. The job posting explicitly cites shape up/basecamp culture and full transparency on task progress — that's why I work spec-first (not spec-driven/SDD): the spec (here, `docs/ARCHITECTURE.md`, plus one `docs/specs/*.md` per phase) is written and validated before code, but after that the implementation and all technical judgment are mine, not the AI's. AI is a copilot, not the pilot.
 
-Four docs, four jobs — don't mix their content: `docs/CONTEXT_TEXT.md` is what's mandatory (Enjoei's literal requirements, not to be reinterpreted); `docs/ARCHITECTURE.md` is how we chose to meet it (our decisions and their reasoning); `docs/PLAN.md` is the phase-by-phase roadmap and its live status (check this first in a new session to know what's already done); `docs/specs/*.md` is the per-phase detail written before implementing each phase.
+Four docs, four jobs — don't mix their content: `docs/CONTEXT_TEST.md` is what's mandatory (Enjoei's literal requirements, not to be reinterpreted); `docs/ARCHITECTURE.md` is how we chose to meet it (our decisions and their reasoning); `docs/PLAN.md` is the phase-by-phase roadmap and its live status (check this first in a new session to know what's already done); `docs/specs/*.md` is the per-phase detail written before implementing each phase.
 
 I work spec-first: before generating anything, I understand the problem, map the codebase, run existing tests to establish a baseline, and decompose the feature into ordered tasks — dependencies, what can run in parallel, what must be sequential. Only then I define the spec — input, output, error cases — and generate.
 

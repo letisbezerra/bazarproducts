@@ -1,6 +1,6 @@
 # Implementation plan — EnjoeiProducts
 
-This is the durable copy of our build-out plan, kept in the repo so any future session (or reviewer) can pick up exactly where we left off without relying on chat history. Update the status table below as phases complete — it doubles as visible progress tracking, in the spirit of the shape-up/transparency culture `docs/CONTEXT_TEXT.md` describes.
+This is the durable copy of our build-out plan, kept in the repo so any future session (or reviewer) can pick up exactly where we left off without relying on chat history. Update the status table below as phases complete — it doubles as visible progress tracking, in the spirit of the shape-up/transparency culture `docs/CONTEXT_TEST.md` describes.
 
 ## Status
 
@@ -23,7 +23,7 @@ Things a phase surfaced that only the developer can resolve (a design asset, a p
 
 ## Context
 
-This is the Enjoei iOS Pleno technical test: a single screen (liked products list) with loading, infinite pagination, and local search, evaluated against the job's own responsibilities/requirements (Swift + Apple ecosystem, Gitflow, SOLID/Clean Architecture, unit **and UI** tests, observability, clear technical docs, performance/UX — see `docs/CONTEXT_TEXT.md` for the literal requirements). Setup already done: converted the Xcode template from SwiftUI to UIKit (`AppDelegate`/`SceneDelegate`/placeholder `ProductListViewController`), written `docs/ARCHITECTURE.md`, `docs/CONTEXT_TEXT.md`, `README.md`, `CLAUDE.md`, and set up Gitflow (`main`/`develop`, both pushed to `origin`). No feature code exists yet.
+This is the Enjoei iOS Pleno technical test: a single screen (liked products list) with loading, infinite pagination, and local search, evaluated against the job's own responsibilities/requirements (Swift + Apple ecosystem, Gitflow, SOLID/Clean Architecture, unit **and UI** tests, observability, clear technical docs, performance/UX — see `docs/CONTEXT_TEST.md` for the literal requirements). Setup already done: converted the Xcode template from SwiftUI to UIKit (`AppDelegate`/`SceneDelegate`/placeholder `ProductListViewController`), written `docs/ARCHITECTURE.md`, `docs/CONTEXT_TEST.md`, `README.md`, `CLAUDE.md`, and set up Gitflow (`main`/`develop`, both pushed to `origin`). No feature code exists yet.
 
 We hit the real API directly to remove guesswork before planning the Data layer:
 - `GET https://www.enjoei.com.br/api/v5/users/enjoei-pro/products/liked?page=N` returns `{ products: [...], pagination: {...}, title, empty_state }`.
@@ -47,7 +47,7 @@ Every phase in this plan — no exceptions — goes through the same three stage
 
 ### Middle
 
-1. Re-read `docs/CONTEXT_TEXT.md` (requirements), `docs/ARCHITECTURE.md` (architecture decisions), this file (the plan), and any other doc/code relevant to the phase.
+1. Re-read `docs/CONTEXT_TEST.md` (requirements), `docs/ARCHITECTURE.md` (architecture decisions), this file (the plan), and any other doc/code relevant to the phase.
 2. Check the intended solution is still coherent with all of the above. If something drifted since the plan was written (e.g. a fact discovered from the real API), reconcile it now, before writing anything — don't carry a stale assumption into the spec.
 3. Once coherent: write `docs/specs/NN-phase-name.md` — **first commit on the branch, before any `.swift` file**. Each spec covers: goal/scope, inputs, outputs (public types/function signatures being introduced), error/edge cases to handle, files to be created or changed, and the list of test cases that will prove it. This is reviewed before implementation starts.
 4. Implement exactly what the spec describes.
@@ -131,7 +131,7 @@ Spec: `docs/specs/05-docs-and-release.md` — checklist of what must be reconcil
 
 - Update `docs/ARCHITECTURE.md` with the two corrections found during Phase 2 (pagination via `next_page`, image URL as plain concatenation) and the Phase 4 addition of UI tests, so the doc matches what was actually built (job posting: "manter a documentação técnica sempre atualizada").
 - Fill in the README's "AI usage" section for real, based on what was actually delegated to AI vs. done by hand across these phases.
-- Confirm CI is green on `develop`, open the `develop` → `main` PR, then zip the project per `docs/CONTEXT_TEXT.md`'s delivery instructions.
+- Confirm CI is green on `develop`, open the `develop` → `main` PR, then zip the project per `docs/CONTEXT_TEST.md`'s delivery instructions.
 
 ## Verification (per phase)
 
