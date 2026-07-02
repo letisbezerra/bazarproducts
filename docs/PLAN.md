@@ -7,7 +7,7 @@ This is the durable copy of our build-out plan, kept in the repo so any future s
 | Phase | Branch | Spec doc | Status |
 |---|---|---|---|
 | 0 — Standards & tooling | `feature/project-standards` | `docs/specs/00-project-standards.md` | Merged — [#1](https://github.com/letisbezerra/bazarproducts/pull/1) |
-| 1 — Core & networking | `feature/core-networking` | `docs/specs/01-core-networking.md` | Not started |
+| 1 — Core & networking | `feature/core-networking` | `docs/specs/01-core-networking.md` | PR open — [#2](https://github.com/letisbezerra/bazarproducts/pull/2) |
 | 2 — Domain & Data | `feature/domain-data` | `docs/specs/02-domain-data.md` | Not started |
 | 3 — Product list screen | `feature/product-list-screen` | `docs/specs/03-product-list-screen.md` | Not started |
 | 4 — UI tests, accessibility & performance | `feature/ui-tests-and-polish` | `docs/specs/04-ui-tests-and-polish.md` | Not started |
@@ -46,7 +46,7 @@ Every phase in this plan — no exceptions — goes through the same three stage
 
 ### End
 
-1. If the phase produces something testable, run a test plan: the automated tests the spec listed, plus manual verification where automated tests can't cover it (e.g. comparing the running app against the Figma states).
+1. If the phase produces something testable, run a test plan: the automated tests the spec listed, plus manual verification where automated tests can't cover it (e.g. comparing the running app against the Figma states). Running these myself isn't enough — hand over a concrete, numbered step-by-step (exact menu items/shortcuts in Xcode, exact test names, what result to expect) so the developer can personally validate on her own Xcode + Simulator before the phase is considered done. Passing tests I ran and reported is not the same as her having verified it.
 2. Check coherence again: does the implementation actually match the spec? If anything diverged during implementation, update the spec doc now so it stays true, not aspirational.
 3. Run a rigorous review before the PR exists, not after: the `finish-task` skill (QA/merge-readiness validation) and the `code-review` skill (correctness bugs, reuse/simplification findings on the diff). Fix what they surface.
 4. Check for conflicts with `develop` (`git fetch` + a merge preview) and resolve any *before* opening the PR, never after.
@@ -72,12 +72,12 @@ Spec: `docs/specs/01-core-networking.md` — `HTTPClient` protocol signature, `N
 Files (under `EnjoeiProducts/Core/`):
 - `HTTPClient.swift` — protocol `func send<T: Decodable>(_ endpoint: Endpoint) async throws -> T`, so `ProductsRepositoryImpl` (Phase 2) and its tests never touch `URLSession` directly.
 - `URLSessionHTTPClient.swift` — the real implementation, built with `URLComponents`/`URLQueryItem` (per the architecture doc's security section, avoids manual string concatenation for query params).
-- `Endpoint.swift` — small struct (path, query items, method) instead of hardcoding the full URL per call.
-- `NetworkError.swift` — typed errors (`invalidResponse`, `decoding`, `http(status:)`, `transport(Error)`) so the ViewModel (Phase 3) can show one generic message without leaking payload/stack traces (matches the security section already written).
+- `Endpoint.swift` — small struct (path, query items, an `HTTPMethod` enum defaulting to `.get`) instead of hardcoding the full URL per call.
+- `NetworkError.swift` — 4 flat, `Equatable` cases (`invalidResponse`, `decoding`, `http(status:)`, `transport`) with no associated `Error` payload, so the ViewModel (Phase 3) can show one generic message without leaking payload/stack traces (matches the security section already written); the underlying `Error` is logged at the mapping site instead of carried in the type.
 - `ImageURLBuilder.swift` — `static func url(imagePublicId: String, size: String = "500x500") -> URL?`, pure concatenation as confirmed above.
-- `AppLogger.swift` — thin protocol (`log(_:category:)`) wrapping `os.Logger`, with categories `.network`/`.viewModel`. This is the observability requirement from the job posting; no third-party SDK, but shaped so a real backend (Crashlytics/Sentry) could conform to the same protocol later without touching call sites.
+- `AppLogger.swift` — a concrete struct (`log(_:category:)`) wrapping `os.Logger`, with categories `.network`/`.viewModel`. This is the observability requirement from the job posting; no third-party SDK.
 
-Tests (`EnjoeiProductsTests/Core/`): `NetworkErrorMappingTests`, `ImageURLBuilderTests` (with/without a real `image_public_id` sample from the live API response captured above).
+Tests (`EnjoeiProductsTests/Core/`): `URLSessionHTTPClientTests` (covers request building and all `NetworkError` mapping paths), `ImageURLBuilderTests` (with/without a real `image_public_id` sample from the live API response captured above), `AppLoggerTests`.
 
 ## Phase 2 — Domain & Data (`feature/domain-data`)
 
@@ -125,7 +125,7 @@ Spec: `docs/specs/05-docs-and-release.md` — checklist of what must be reconcil
 
 ## Verification (per phase)
 
-- Phases 0–3: `xcodebuild -project EnjoeiProducts.xcodeproj -scheme EnjoeiProducts -destination 'platform=iOS Simulator,name=iPhone 17' test` must pass, plus the CI workflow from Phase 0 must go green on the PR.
+- Phases 0–3: `xcodebuild -project EnjoeiProducts.xcodeproj -scheme EnjoeiProducts -destination 'platform=iOS Simulator,name=iPhone 17' test` must pass locally. The CI workflow itself is a known non-blocking check on the GitHub-hosted runner (simulator-boot flake, documented in `docs/specs/00-project-standards.md`) — local test success is the actual merge gate, not the CI badge.
 - Phase 3 end: run the app in Simulator and manually walk all 6 Figma states (loading, results, pagination, search empty, search filled, no results) side by side with the provided screenshots.
 - Phase 4: run the UI test target locally (`Cmd+U` with `EnjoeiProductsUITests` enabled) before merging.
 - Phase 5: fresh `git clone` + open in Xcode + run, to confirm the README's instructions actually work end to end.
