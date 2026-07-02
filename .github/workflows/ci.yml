@@ -20,6 +20,15 @@ jobs:
           xcodebuild -version
           xcodebuild -showsdks
 
+      - name: Diagnose available simulators
+        run: |
+          echo "--- Installed Xcode versions ---"
+          ls /Applications | grep Xcode
+          echo "--- Available runtimes ---"
+          xcrun simctl list runtimes available
+          echo "--- Available iOS devices ---"
+          xcrun simctl list devices available
+
       - name: Resolve Swift packages
         run: xcodebuild -resolvePackageDependencies -project EnjoeiProducts.xcodeproj -scheme EnjoeiProducts
 
