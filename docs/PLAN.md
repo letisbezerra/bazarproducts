@@ -13,6 +13,12 @@ This is the durable copy of our build-out plan, kept in the repo so any future s
 | 4 — UI tests, accessibility & performance | `feature/ui-tests-and-polish` | `docs/specs/04-ui-tests-and-polish.md` | Not started |
 | 5 — Docs & release | `chore/release-prep` (or direct on `develop`) | `docs/specs/05-docs-and-release.md` | Not started |
 
+## Open blockers / needs input
+
+Things a phase surfaced that only the developer can resolve (a design asset, a product decision, an account permission). Checked off as resolved, not deleted, so the history of what needed a human call stays visible.
+
+- [ ] **Mascot illustration for the "No Results" empty state** (Phase 3, `docs/ARCHITECTURE.md` §1's "No Results" row): the Figma file has this asset, but nothing has been exported into `Assets.xcassets` yet (confirmed empty except `AppIcon`/`AccentColor`). Until it's provided, Phase 3 uses an SF Symbol as a placeholder and calls this out explicitly rather than silently approximating the real design — visual fidelity is a stated priority (`CLAUDE.md`), so a placeholder must stay visibly flagged, not quietly treated as final.
+
 ## Context
 
 This is the Enjoei iOS Pleno technical test: a single screen (liked products list) with loading, infinite pagination, and local search, evaluated against the job's own responsibilities/requirements (Swift + Apple ecosystem, Gitflow, SOLID/Clean Architecture, unit **and UI** tests, observability, clear technical docs, performance/UX — see `docs/TEST_BRIEF.md` for the literal requirements). Setup already done: converted the Xcode template from SwiftUI to UIKit (`AppDelegate`/`SceneDelegate`/placeholder `ProductListViewController`), written `docs/ARCHITECTURE.md`, `docs/TEST_BRIEF.md`, `README.md`, `CLAUDE.md`, and set up Gitflow (`main`/`develop`, both pushed to `origin`). No feature code exists yet.
