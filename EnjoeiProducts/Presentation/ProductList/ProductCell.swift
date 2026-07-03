@@ -28,6 +28,10 @@ final class ProductCell: UICollectionViewCell {
         // which made the badge visibly lag behind the price text as it grew.
         label.font = AppFont.uiFont(size: 10, weight: .semibold, textStyle: .caption1)
         label.adjustsFontForContentSizeCategory = true
+        // The badge and price pill sit inside a fixed-size (non-growing) card with no
+        // constraint bounding their combined height -- capping how far they scale avoids
+        // them growing into/clipping each other at the most extreme accessibility sizes.
+        label.maximumContentSizeCategory = .accessibilityLarge
         label.textColor = .white
         label.backgroundColor = BrandColor.uiColor
         label.textAlignment = .center
@@ -48,6 +52,7 @@ final class ProductCell: UICollectionViewCell {
         let label = UILabel()
         label.font = AppFont.uiFont(size: 12, weight: .regular, textStyle: .caption1)
         label.adjustsFontForContentSizeCategory = true
+        label.maximumContentSizeCategory = .accessibilityLarge
         return label
     }()
 
@@ -55,6 +60,7 @@ final class ProductCell: UICollectionViewCell {
         let label = UILabel()
         label.font = AppFont.uiFont(size: 12, weight: .regular, textStyle: .caption1)
         label.adjustsFontForContentSizeCategory = true
+        label.maximumContentSizeCategory = .accessibilityLarge
         label.textColor = ReadableGray.uiColor
         return label
     }()
@@ -96,6 +102,10 @@ final class ProductCell: UICollectionViewCell {
     }
 
     func configure(with product: Product) {
+        // Cells sitting in the reuse pool are detached from the view hierarchy and don't
+        // receive traitCollectionDidChange, so a content-size-category change made while a
+        // cell was pooled would otherwise leave it with a stale axis once dequeued for reuse.
+        updatePriceStackAxis()
         imageView.kf.setImage(with: product.imageURL, options: [.processor(Self.imageProcessor)])
         let currentPriceText = PriceFormatter.string(from: product.currentPrice)
         currentPriceLabel.text = currentPriceText

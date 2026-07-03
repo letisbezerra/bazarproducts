@@ -42,8 +42,11 @@ final class ProductListViewModelPerformanceTests: XCTestCase {
         }
         let elapsed = Date().timeIntervalSince(start)
 
-        print("ProductListViewModelPerformanceTests: \(queries.count) searches over " +
-            "\(Self.largeDatasetSize) items took \(elapsed)s")
+        // Named activity (not a debug print) so the measured value is visible in the test
+        // log/Report Navigator on every run, not just on failure.
+        XCTContext.runActivity(
+            named: "\(queries.count) searches over \(Self.largeDatasetSize) items took \(elapsed)s"
+        ) { _ in }
 
         // ~300ms x 3 queries (~0.9s) is the expected floor, dominated by the debounce
         // itself, not the filter. A generous ceiling catches an actual regression in the

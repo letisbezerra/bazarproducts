@@ -10,11 +10,6 @@ final class ProductListViewModel {
 
     private static let prefetchThreshold = 5
     private static let searchDebounceNanoseconds: UInt64 = 250_000_000
-    // Real API, no mock -- fast responses can make the loading state too transient for
-    // ProductListUITests to observe. This launch argument (test-only, never set in a
-    // real launch) slows down just the first page's fetch enough to make it observable,
-    // without touching the data itself.
-    private static let uiTestingArtificialDelayArgument = "-uiTestingArtificialDelay"
 
     private(set) var state: State = .loading {
         didSet { onChange?() }
@@ -70,11 +65,12 @@ final class ProductListViewModel {
         state = .loading
         currentPage = 1
 
-        if ProcessInfo.processInfo.arguments.contains(Self.uiTestingArtificialDelayArgument) {
-            // XCUITest's own post-launch attach/sync overhead alone measured at ~9s in one
-            // run (before the test's first assertion even executes) -- a short delay here
-            // gets outlasted by that overhead alone, independent of network speed. 15s gives
-            // real margin over that.
+        if UITestingFlag.artificialDelay.isEnabled {
+            // Real API, no mock -- fast responses can make the loading state too transient
+            // for ProductListUITests to observe. XCUITest's own post-launch attach/sync
+            // overhead alone measured at ~9s in one run (before the test's first assertion
+            // even executes), so a short delay gets outlasted by that overhead alone,
+            // independent of network speed. 15s gives real margin over that.
             try? await Task.sleep(nanoseconds: 15_000_000_000)
         }
 
