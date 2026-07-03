@@ -1,6 +1,6 @@
 # Spec 02 — Domain & Data
 
-Phase 2 of `docs/PLAN.md`. Builds on Phase 1's `HTTPClient`/`NetworkError`/`ImageURLBuilder` to produce the first layer that knows about products.
+Phase 2 of this project's phased build-out. Builds on Phase 1's `HTTPClient`/`NetworkError`/`ImageURLBuilder` to produce the first layer that knows about products.
 
 ## Goal
 
@@ -35,7 +35,7 @@ Real payload reconfirmed by calling `GET https://www.enjoei.com.br/api/v5/users/
 Confirmed from this real response:
 - `id` is a JSON number (`Int`), not a string.
 - `price.sale` is genuinely **absent** (not `null`) on a product with no discount — confirmed on a real item in this same response.
-- `pagination.next_page` is `2` on page 1 and (per earlier research already in `docs/PLAN.md`) becomes `null` on the last page — the exact stop condition.
+- `pagination.next_page` is `2` on page 1 and (per earlier research against the live API) becomes `null` on the last page — the exact stop condition.
 - The response also carries `title` (a header string) and `empty_state` (Enjoei's own "you have zero liked products" state). **Neither is modeled in this phase** — `empty_state` here is the server's "no favorites at all" case, a different concept from this app's local-search "no results" empty state (`docs/ARCHITECTURE.md` §1), which needs no server data at all. Only `products` and `pagination.next_page` are consumed.
 - `product_url`, `slug`, `context` fields exist in the payload but are not used by any Figma state — deliberately not mapped into `Product`, per "no dead code."
 

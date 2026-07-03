@@ -1,6 +1,6 @@
 # Spec 01 — Core & networking
 
-Phase 1 of `docs/PLAN.md`. First layer with real logic: the pieces every later phase (Data, Presentation) depends on but that don't yet know anything about products.
+Phase 1 of this project's phased build-out. First layer with real logic: the pieces every later phase (Data, Presentation) depends on but that don't yet know anything about products.
 
 ## Goal
 
@@ -8,7 +8,7 @@ Provide a transport-agnostic HTTP abstraction, typed errors, an image URL builde
 
 ## Inputs
 
-- Real API contract already confirmed by hitting `GET https://www.enjoei.com.br/api/v5/users/enjoei-pro/products/liked?page=N` directly (documented in `docs/PLAN.md`'s Context section):
+- Real API contract already confirmed by hitting `GET https://www.enjoei.com.br/api/v5/users/enjoei-pro/products/liked?page=N` directly:
   - `image_public_id` is already the exact base64 string the CDN expects — building the final URL is pure concatenation, no encoding on our side.
   - No API key/auth header required (public endpoint).
 - `docs/ARCHITECTURE.md`'s security section: no manual string concatenation for query parameters — must go through `URLComponents`/`URLQueryItem`.
