@@ -7,6 +7,9 @@ final class ProductListViewController: UIViewController {
     }
 
     private static let interItemSpacing: CGFloat = 8
+    // Shared by the skeleton's accessibilityLabel and both places that announce loading
+    // (viewDidAppear for the first load, render() for a retry) -- previously typed out 3 times.
+    private static let loadingAnnouncement = "Carregando produtos"
 
     private let viewModel: ProductListViewModel
 
@@ -163,7 +166,7 @@ final class ProductListViewController: UIViewController {
         // Apple's documented safe point for a screen's first announcement. Guarded to the
         // still-loading case so this never double-announces if the fetch already finished.
         if viewModel.state == .loading {
-            UIAccessibility.post(notification: .announcement, argument: "Carregando produtos")
+            UIAccessibility.post(notification: .announcement, argument: Self.loadingAnnouncement)
         }
     }
 
@@ -184,7 +187,7 @@ final class ProductListViewController: UIViewController {
             // since a post this early can be silently dropped. This branch only fires for a
             // later retry, when the screen is already visible.
             if stateChanged, previousState != nil {
-                UIAccessibility.post(notification: .announcement, argument: "Carregando produtos")
+                UIAccessibility.post(notification: .announcement, argument: Self.loadingAnnouncement)
             }
 
         case .loaded:
@@ -209,7 +212,13 @@ final class ProductListViewController: UIViewController {
                 // navigation. A nil argument also left VoiceOver to guess the target, which in
                 // practice landed outside this screen entirely (e.g. the status bar).
                 UIAccessibility.post(notification: .layoutChanged, argument: logoButton)
-            } else if viewModel.searchText != previousAnnouncedSearchText {
+            }
+            // Deliberately not an "else if": a user can type a search while the initial page is
+            // still loading (the search field isn't disabled during .loading), so the very
+            // render() call where loading finishes can ALSO be the one where the search result
+            // first needs announcing -- an else-if here would let the loading announcement win
+            // and silently swallow the search-result one.
+            if viewModel.searchText != previousAnnouncedSearchText {
                 announceSearchResult(showsEmptyState: showsEmptyState)
             }
             previousAnnouncedSearchText = viewModel.searchText
@@ -349,7 +358,7 @@ private extension ProductListViewController {
         // one, a VoiceOver user swiping through the loading screen would land on an unlabeled
         // stop instead of hearing that content is loading.
         skeletonView.isAccessibilityElement = true
-        skeletonView.accessibilityLabel = "Carregando produtos"
+        skeletonView.accessibilityLabel = Self.loadingAnnouncement
         skeletonView.accessibilityIdentifier = "skeletonGridView"
         // .editingChanged doesn't reliably fire for dictated text (it's inserted through a
         // different path than character-by-character typing) -- textDidChangeNotification
