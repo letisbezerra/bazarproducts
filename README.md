@@ -2,6 +2,21 @@
 
 iOS Pleno technical test for Enjoei — a liked products listing screen with loading state, infinite pagination, and local search.
 
+## Features
+
+Mandatory flows, per the test brief:
+- Loading state (skeleton grid)
+- Results listing — layout, prices, discount tags
+- Infinite pagination — transparent, no blocking spinner
+- Local search — filled state and "no results" empty state
+
+Also included:
+- Discount badge
+- Image loading/caching (Kingfisher)
+- Unit tests (ViewModel, mapper, repository)
+- UI tests (XCUITest, covering all 4 mandatory flows)
+- VoiceOver accessibility support (Dynamic Type, state-change announcements)
+
 ## Requirements
 
 - Xcode 26.5+
@@ -27,4 +42,14 @@ Full reasoning for every decision (why Clean+MVVM over VIPER/TCA, why `async/awa
 
 ## AI usage
 
-_To be filled in as the implementation progresses — this section will describe concretely where AI was used (e.g. scaffolding, refactors, test generation, syntax lookups) and where decisions were made and reviewed by hand, as requested in the test brief._
+AI (Claude Code) was used throughout as a development copilot. Every implementation started from a written specification, reviewed before any production code was generated, and every generated line was reviewed, adapted, and validated by me before being committed.
+
+AI mainly helped with:
+- generating boilerplate for the networking layer, DTOs/mappers, and the ViewModel/ViewController scaffolding;
+- generating unit and UI test scaffolding;
+- researching UIKit and accessibility APIs and Swift syntax (Compositional Layout, `UIFontMetrics` Dynamic Type scaling, `UIAccessibility.post` announcements);
+- suggesting refactors and alternative implementations.
+
+I was responsible for all architectural decisions, API analysis, debugging, accessibility validation, visual fidelity against the Figma design, and the final review of every AI-generated line. AI suggestions were treated as proposals rather than authoritative answers: whenever a suggestion affected architecture, accessibility, or visual behavior, it was verified in Xcode and the iOS Simulator before being accepted.
+
+Every fix, in every phase, was validated by me in Simulator/Xcode against a concrete checklist before being committed — an AI report of "tests pass" was never taken as sufficient on its own.

@@ -13,3 +13,11 @@ DerivedData/
 
 # Claude Code CLI runtime state (not project content)
 .claude/
+
+# Internal process docs — kept locally, not part of the delivered repo/zip
+# (see "Delivery scope" in docs/specs/05-docs-and-release.md)
+/CLAUDE.md
+/docs/CONTEXT_TEST.md
+/docs/PLAN.md
+/docs/DESIGN_GUIDE.md
+/docs/AI_USAGE_LOG.md
