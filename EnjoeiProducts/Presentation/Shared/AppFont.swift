@@ -19,11 +19,18 @@ enum AppFont {
         }
     }
 
-    static func uiFont(size: CGFloat, weight: UIFont.Weight = .regular) -> UIFont {
-        UIFont(name: postscriptName(for: weight), size: size) ?? .systemFont(ofSize: size, weight: weight)
+    static func uiFont(
+        size: CGFloat,
+        weight: UIFont.Weight = .regular,
+        textStyle: UIFont.TextStyle? = nil,
+        compatibleWith traitCollection: UITraitCollection? = nil
+    ) -> UIFont {
+        let baseFont = UIFont(name: postscriptName(for: weight), size: size) ?? .systemFont(ofSize: size, weight: weight)
+        guard let textStyle else { return baseFont }
+        return UIFontMetrics(forTextStyle: textStyle).scaledFont(for: baseFont, compatibleWith: traitCollection)
     }
 
-    static func font(size: CGFloat, weight: UIFont.Weight = .regular) -> Font {
-        Font(uiFont(size: size, weight: weight))
+    static func font(size: CGFloat, weight: UIFont.Weight = .regular, textStyle: UIFont.TextStyle? = nil) -> Font {
+        Font(uiFont(size: size, weight: weight, textStyle: textStyle))
     }
 }

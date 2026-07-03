@@ -23,7 +23,8 @@ final class ProductCell: UICollectionViewCell {
 
     private let badgeLabel: UILabel = {
         let label = UILabel()
-        label.font = AppFont.uiFont(size: 10, weight: .semibold)
+        label.font = AppFont.uiFont(size: 10, weight: .semibold, textStyle: .caption2)
+        label.adjustsFontForContentSizeCategory = true
         label.textColor = .white
         label.backgroundColor = BrandColor.uiColor
         label.textAlignment = .center
@@ -42,15 +43,27 @@ final class ProductCell: UICollectionViewCell {
 
     private let currentPriceLabel: UILabel = {
         let label = UILabel()
-        label.font = AppFont.uiFont(size: 12, weight: .regular)
+        label.font = AppFont.uiFont(size: 12, weight: .regular, textStyle: .caption1)
+        label.adjustsFontForContentSizeCategory = true
         return label
     }()
 
     private let originalPriceLabel: UILabel = {
         let label = UILabel()
-        label.font = AppFont.uiFont(size: 12, weight: .regular)
+        label.font = AppFont.uiFont(size: 12, weight: .regular, textStyle: .caption1)
+        label.adjustsFontForContentSizeCategory = true
         label.textColor = ReadableGray.uiColor
         return label
+    }()
+
+    // Horizontal side-by-side prices don't fit the card's fixed width at large
+    // accessibility text sizes (the original price gets truncated) -- switches to
+    // vertical in updatePriceStackAxis() when that's the case.
+    private let priceStack: UIStackView = {
+        let stack = UIStackView()
+        stack.spacing = 6
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        return stack
     }()
 
     override init(frame: CGRect) {
@@ -61,6 +74,13 @@ final class ProductCell: UICollectionViewCell {
     @available(*, unavailable)
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        if traitCollection.preferredContentSizeCategory != previousTraitCollection?.preferredContentSizeCategory {
+            updatePriceStackAxis()
+        }
     }
 
     override func prepareForReuse() {
@@ -108,11 +128,8 @@ final class ProductCell: UICollectionViewCell {
         contentView.layer.cornerRadius = 16
         contentView.layer.masksToBounds = true
 
-        let priceStack = UIStackView(arrangedSubviews: [currentPriceLabel, originalPriceLabel])
-        priceStack.axis = .horizontal
-        priceStack.spacing = 6
-        priceStack.alignment = .firstBaseline
-        priceStack.translatesAutoresizingMaskIntoConstraints = false
+        [currentPriceLabel, originalPriceLabel].forEach(priceStack.addArrangedSubview)
+        updatePriceStackAxis()
         priceContainerView.addSubview(priceStack)
 
         [imageView, badgeLabel, priceContainerView].forEach {
@@ -131,7 +148,7 @@ final class ProductCell: UICollectionViewCell {
 
             badgeLabel.topAnchor.constraint(equalTo: imageView.topAnchor, constant: 8),
             badgeLabel.trailingAnchor.constraint(equalTo: imageView.trailingAnchor, constant: -8),
-            badgeLabel.heightAnchor.constraint(equalToConstant: 22),
+            badgeLabel.heightAnchor.constraint(greaterThanOrEqualToConstant: 22),
             badgeLabel.widthAnchor.constraint(greaterThanOrEqualToConstant: 48),
 
             priceContainerView.leadingAnchor.constraint(equalTo: imageView.leadingAnchor, constant: 8),
@@ -145,6 +162,12 @@ final class ProductCell: UICollectionViewCell {
         ])
 
         badgeLabel.setContentHuggingPriority(.required, for: .horizontal)
+    }
+
+    private func updatePriceStackAxis() {
+        let isAccessibilityCategory = traitCollection.preferredContentSizeCategory.isAccessibilityCategory
+        priceStack.axis = isAccessibilityCategory ? .vertical : .horizontal
+        priceStack.alignment = isAccessibilityCategory ? .leading : .firstBaseline
     }
 }
 
