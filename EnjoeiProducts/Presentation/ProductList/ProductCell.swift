@@ -21,9 +21,12 @@ final class ProductCell: UICollectionViewCell {
         return imageView
     }()
 
-    private let badgeLabel: UILabel = {
-        let label = UILabel()
-        label.font = AppFont.uiFont(size: 10, weight: .semibold, textStyle: .caption2)
+    private let badgeLabel: InsetLabel = {
+        let label = InsetLabel()
+        // .caption1 (not .caption2) to match currentPriceLabel/originalPriceLabel's scaling
+        // curve -- .caption2 is intentionally flat through the mid-range Dynamic Type sizes,
+        // which made the badge visibly lag behind the price text as it grew.
+        label.font = AppFont.uiFont(size: 10, weight: .semibold, textStyle: .caption1)
         label.adjustsFontForContentSizeCategory = true
         label.textColor = .white
         label.backgroundColor = BrandColor.uiColor
