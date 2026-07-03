@@ -71,7 +71,11 @@ final class ProductListViewModel {
         currentPage = 1
 
         if ProcessInfo.processInfo.arguments.contains(Self.uiTestingArtificialDelayArgument) {
-            try? await Task.sleep(nanoseconds: 2_000_000_000)
+            // XCUITest's own post-launch attach/sync overhead alone measured at ~9s in one
+            // run (before the test's first assertion even executes) -- a short delay here
+            // gets outlasted by that overhead alone, independent of network speed. 15s gives
+            // real margin over that.
+            try? await Task.sleep(nanoseconds: 15_000_000_000)
         }
 
         do {

@@ -183,6 +183,14 @@ final class ProductListViewController: UIViewController {
         snapshot.appendSections([.main])
         snapshot.appendItems(viewModel.displayedProducts)
         dataSource.apply(snapshot, animatingDifferences: true)
+        // Test-only signal, gated behind a launch argument so it's never set for a real
+        // user (accessibilityValue is read aloud by VoiceOver -- a raw item count would be
+        // a confusing announcement). UICollectionView recycles off-screen cells, so
+        // collectionView.cells.count (what XCUITest can otherwise observe) never reflects
+        // the true number of loaded items, only however many currently fit on screen.
+        if ProcessInfo.processInfo.arguments.contains("-uiTestingExposesLoadedItemCount") {
+            collectionView.accessibilityValue = "\(viewModel.displayedProducts.count)"
+        }
     }
 
     private func clearSearch() {
@@ -245,6 +253,11 @@ private extension ProductListViewController {
     }
 
     func setUpViews() {
+        // A plain UIView with no accessible descendants isn't reliably surfaced in the
+        // accessibility tree just by having an identifier -- without this, ProductListUITests'
+        // query for it was flaky (present in the automation snapshot on some runs, absent on
+        // others). Marking it an element directly makes it unambiguous.
+        skeletonView.isAccessibilityElement = true
         skeletonView.accessibilityIdentifier = "skeletonGridView"
         searchField.addTarget(self, action: #selector(searchFieldDidChange), for: .editingChanged)
         clearSearchButton.addTarget(self, action: #selector(clearSearchTapped), for: .touchUpInside)
