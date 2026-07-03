@@ -10,8 +10,8 @@ This is the durable copy of our build-out plan, kept in the repo so any future s
 | 1 — Core & networking | `feature/core-networking` | `docs/specs/01-core-networking.md` | Merged — [#2](https://github.com/letisbezerra/bazarproducts/pull/2) |
 | 2 — Domain & Data | `feature/domain-data` | `docs/specs/02-domain-data.md` | Merged — [#3](https://github.com/letisbezerra/bazarproducts/pull/3) |
 | 3 — Product list screen | `feature/product-list-screen` | `docs/specs/03-product-list-screen.md` | Merged — [#4](https://github.com/letisbezerra/bazarproducts/pull/4) |
-| 4 — UI tests, accessibility & performance | `feature/ui-tests-and-polish` | `docs/specs/04-ui-tests-and-polish.md` | PR open — [#5](https://github.com/letisbezerra/bazarproducts/pull/5) |
-| 5 — Docs & release | `chore/release-prep` (or direct on `develop`) | `docs/specs/05-docs-and-release.md` | Not started |
+| 4 — UI tests, accessibility & performance | `feature/ui-tests-and-polish` | `docs/specs/04-ui-tests-and-polish.md` | Merged — [#5](https://github.com/letisbezerra/bazarproducts/pull/5) |
+| 5 — Docs & release | `chore/release-prep` | `docs/specs/05-docs-and-release.md` | In progress |
 
 ## Open blockers / needs input
 
@@ -134,7 +134,7 @@ Spec: `docs/specs/05-docs-and-release.md` — checklist of what must be reconcil
 
 - ~~Update `docs/ARCHITECTURE.md` with the pagination (`next_page`) correction and the UI-tests reversal~~ — done early, during Phase 3's documentation audit, instead of waiting until this phase: an evaluator reading `ARCHITECTURE.md` mid-project shouldn't see it contradict the actual code. `ARCHITECTURE.md`'s folder structure (§6) was also corrected to match what was actually built (network code under `Core/`, not `Data/Network/`; `Presentation/Shared/` added).
 - Fill in the README's "AI usage" section for real, consolidating `docs/AI_USAGE_LOG.md` (a running log kept since Phase 3, added specifically so this section wouldn't need to be reconstructed from memory at the end).
-- **Delivery cleanup, decided with the developer during Phase 3's documentation audit**: the zip that goes to Enjoei should only contain `README.md` and `docs/ARCHITECTURE.md` as documentation — everything else here (`docs/CONTEXT_TEST.md`, `docs/PLAN.md`, `docs/specs/*.md`, `docs/AI_USAGE_LOG.md`, `CLAUDE.md`) is internal planning/process scaffolding for working with AI across sessions, not useful to an outside reader, and gets deleted from the working tree in one commit right before zipping (not before — these docs are still needed to finish Phases 4-5). `docs/DESIGN_GUIDE.md` is undecided: keep as-is, keep after a tone cleanup (it currently reads as internal notes, e.g. "best guess," "confirm with developer"), or also remove — revisit at the time.
+- **Delivery cleanup, decided with the developer during Phase 3's documentation audit**: the zip that goes to Enjoei should only contain `README.md` and `docs/ARCHITECTURE.md` as documentation — everything else here (`docs/CONTEXT_TEST.md`, `docs/PLAN.md`, `docs/specs/*.md`, `docs/AI_USAGE_LOG.md`, `CLAUDE.md`) is internal planning/process scaffolding for working with AI across sessions, not useful to an outside reader, and gets deleted from the working tree in one commit right before zipping (not before — these docs are still needed to finish Phases 4-5). `docs/DESIGN_GUIDE.md` **decided this phase**: removed from delivery along with the rest — its content is process history (a screenshot read, corrected via Dev Mode crops) rather than a technical reference an evaluator needs, and what does matter is already in `ARCHITECTURE.md` or the code/assets themselves. See `docs/specs/05-docs-and-release.md`.
 - Confirm CI is green on `develop`, open the `develop` → `main` PR, then zip the project per `docs/CONTEXT_TEST.md`'s delivery instructions.
 
 ## Verification (per phase)
