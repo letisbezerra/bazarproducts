@@ -1,21 +1,21 @@
 # Spec 04 — UI tests, accessibility & performance
 
-Phase 4 of `docs/PLAN.md`. Adds automated coverage for the four mandatory flows from `docs/CONTEXT_TEST.md` §1 that unit tests can't reach (they exercise `ProductListViewModel` in isolation, not the real `UICollectionView`/search field/empty-state wiring), closes the one real accessibility gap left after Phase 3's HIG audit (Dynamic Type), and gets an objective, automated number for the search-filter performance question instead of a subjective "felt smooth" call.
+Phase 4 of `docs/PLAN.md`. Adds automated coverage for the four mandatory flows from `docs/CONTEXT_TEST.md` §1 that unit tests can't reach (they exercise `ProductListViewModel` in isolation, not the real `UICollectionView`/search field/empty-state wiring), covers Dynamic Type and (per a correction below) real VoiceOver announcement support, and gets an objective, automated number for the search-filter performance question instead of a subjective "felt smooth" call.
 
-Built in three independently committed sub-steps, same pattern as Phase 3 — each sub-step gets its own build/test cycle and a validation hand-off before moving to the next, per `docs/PLAN.md`'s "large phase in sub-steps" rule.
+Built in three independently committed sub-steps, same pattern as Phase 3, plus a 4th sub-step added after the fact once manual VoiceOver testing revealed the original accessibility scoping below was wrong — each sub-step gets its own build/test cycle and a validation hand-off before moving to the next, per `docs/PLAN.md`'s "large phase in sub-steps" rule.
 
 ## Goal
 
-Prove — with an automated, repeatable test, not just a manual walkthrough — that: (1) the four mandatory Figma flows work end-to-end through the real UI; (2) the screen remains usable at large Dynamic Type sizes; (3) local search filtering stays fast once the list is large.
+Prove — with an automated, repeatable test, not just a manual walkthrough — that: (1) the four mandatory Figma flows work end-to-end through the real UI; (2) the screen remains usable at large Dynamic Type sizes and is properly narrated by VoiceOver as its content changes; (3) local search filtering stays fast once the list is large.
 
-## What's already done (not repeated here)
+## What's already done (not repeated here) — correction below
 
 Checked against Phase 3's HIG audit (`docs/DESIGN_GUIDE.md` §7) before writing this spec, per the phase-lifecycle "Middle" step of reconciling before writing anything:
 - `accessibilityLabel` on price/discount (`ProductCell.swift:96-103`) — done.
 - Search field (`placeholder = "buscar"`) and the inline "limpar busca" button (visible title) — both already read correctly by VoiceOver via standard UIKit behavior, no gap.
 - Contrast (`ReadableGray`) and 44×44pt tap targets (`ExpandedHitAreaButton`) — done.
 
-So this phase's real accessibility scope is narrower than `docs/PLAN.md`'s original Phase 4 bullet: just Dynamic Type (sub-step 2 below).
+**This turned out to be an incomplete read of the HIG audit's scope, corrected during this phase's own hands-on VoiceOver testing (not caught by static code review or by the "already done" check above, which only verified individual elements have labels — not that the screen actually narrates itself as content changes).** The developer walked the running app with VoiceOver, gestures and all (swipe navigation, double-tap activation, keyboard dictation), and found the loading state, search results, and errors were all completely silent beyond their static labels: nothing ever told VoiceOver a screen transition had happened, so unless the user's focus already happened to be on the exact element that changed, nothing was announced. This is addressed in sub-step 4 below, added after the original 3 sub-steps were already committed.
 
 ## Sub-step 1 — XCUITest flows
 
@@ -79,7 +79,37 @@ Same as the 4 outputs above — this sub-step's tests ARE the deliverable, not a
 - **No background-queue change unless the measured baseline shows it's warranted** — per the "don't pre-optimize" instruction already in `docs/PLAN.md`, this sub-step does not move filtering off the main thread speculatively. Measured: **~0.95s for 3 sequential searches over 1,300 items**, matching almost exactly the ~0.9s floor expected from the debounce alone (3 × 300ms wait) — the filter itself adds negligible cost (it's a single `String.range(of:)` scan per item, not a network or disk operation). No production code changes needed; the test itself, sitting in the repo, is the deliverable.
 
 ### Test cases
-- `test_updateSearchText_performsWellAgainstLargeProductList`: asserts the timed round trip stays under a generous 2-second ceiling (measured value is ~0.95s) — loose enough to not be flaky under CI scheduling noise, tight enough to catch an actual regression in the filter's cost. The exact elapsed time is also printed to the test log for visibility.
+- `test_updateSearchText_performsWellAgainstLargeProductList`: asserts the timed round trip stays under a generous 2-second ceiling (measured value is ~0.95s) — loose enough to not be flaky under CI scheduling noise, tight enough to catch an actual regression in the filter's cost. The elapsed time is attached as a named `XCTContext` activity, visible in the test log for any run, not just on failure.
+
+## Sub-step 4 — VoiceOver announcements (added after manual testing, not in the original plan)
+
+### Inputs
+- The running app, walked with VoiceOver on (gesture-based swipe navigation and double-tap activation, plus keyboard dictation into the search field) — the only way this gap was found, since neither static code review nor "does this element have a label" checks catch a missing state-change announcement.
+
+### What manual testing found
+Four real, user-facing gaps, none anticipated by this spec's original "already done" section:
+1. **Loading, search results, and errors were all silent beyond their static labels.** VoiceOver never announces a screen's dynamic content changes on its own — that requires explicitly posting `UIAccessibility.post(notification:argument:)`. Without it, a state transition is inaudible unless the user's focus already happens to be on the exact element that changed.
+2. **Dictated search text didn't reliably trigger a re-filter.** `searchFieldDidChange()` was wired to `.editingChanged`, which doesn't consistently fire for text inserted via dictation (a different insertion path than character-by-character typing).
+3. **The nav bar logo had no way to reset the screen**, for either a sighted tap or VoiceOver — it was a plain, non-interactive `UIImageView`.
+4. **The keyboard's "buscar" return key did nothing** — no `UITextFieldDelegate` was wired up at all, so the keyboard just stayed open with no feedback that a search had been "submitted".
+
+### Outputs
+- `ProductListViewController.render()`: tracks `previousState`/`previousAnnouncedSearchText` to post announcements only on actual transitions (not on every re-render, e.g. pagination) —
+  - Loading started: `.announcement`, "Carregando produtos" (posted from `viewDidAppear`, not from the `viewDidLoad`-time `render()` call, since a post before the view is on screen can be silently dropped; a later retry's loading state posts from `render()` instead, since the screen is already visible by then).
+  - Loading finished: `.layoutChanged` targeting the nav bar logo button directly (`.screenChanged` is documented for an actual new screen appearing, not a same-screen content update; a `nil` argument also left VoiceOver to pick its own target, which in practice landed outside the app's own content).
+  - Search settled with matches / no matches: `.announcement` with a result count or a "not found" message, keyed off `viewModel.searchText` changing (so pagination-triggered re-renders don't also fire this).
+  - Initial-load error: `.announcement` with the error message.
+- `searchFieldDidChange()` is now triggered via `NotificationCenter` observing `UITextField.textDidChangeNotification` instead of the `.editingChanged` control event.
+- The nav bar logo (`makeLogoView()`) is now an `ExpandedHitAreaButton` (not a plain `UIImageView`) wired to a new `logoTapped()` action that clears the search and scrolls to top — one mechanism that works identically for a sighted tap and a VoiceOver double-tap. Its `accessibilityLabel` is `"Enjoei, início"` (folded into the label itself, not `accessibilityHint`, since VoiceOver's "speak hints" is a setting some users disable).
+- `ProductListViewController` conforms to `UITextFieldDelegate`; `textFieldShouldReturn(_:)` resigns first responder, leaving the search field itself focused so continuing to swipe reaches the next element naturally.
+
+### Decisions & edge cases
+- **`UIButton.Configuration.plain()` was tried first for the logo button and produced a visible rendering artifact** (a stray line through the logo) — likely the configuration system still reserving title-label layout space for an empty title. Replaced with the classic `.custom` type + `setImage(_:for:)`, which has no such behavior.
+- **That classic API then rendered the logo cropped to a sliver** until `contentHorizontalAlignment`/`contentVerticalAlignment` were set to `.fill` — without it, `UIButton` sizes its image view to the image's own (much larger, @3x) intrinsic size and centers it inside the 32×32 frame instead of scaling to fit; `.fill` alignment makes the image view span the button's content area first, so the existing `.scaleAspectFit` content mode then has the right frame to scale within.
+- **A persistent, unresolved Simulator-specific symptom**: across three otherwise API-correct attempts (`.screenChanged` with `nil`, `.screenChanged` targeting the logo, `.layoutChanged` targeting the logo), the "loading finished" focus-and-announce got intermittently interrupted by VoiceOver announcing the system clock instead, sometimes never recovering for the rest of that run. Independent research confirms VoiceOver in the iOS Simulator is documented as less reliable than on a real device, and Apple's own guidance is that real-device testing is the only reliable validation for VoiceOver behavior. Left as the current, textbook-correct implementation (explicit `.layoutChanged` target) pending a real-device retest — not chased further with more Simulator-side workarounds.
+
+### Test cases
+None automated — VoiceOver announcement behavior isn't practically assertable via XCUITest (it drives the accessibility tree, not the spoken audio output), so this sub-step's verification is manual only, per the Verification section below.
 
 ## Files to be created / changed
 
@@ -87,12 +117,13 @@ Created:
 - `EnjoeiProductsUITests/ProductListUITests.swift`
 - `EnjoeiProductsTests/Presentation/ProductListViewModelPerformanceTests.swift`
 - `EnjoeiProducts/Presentation/Shared/InsetLabel.swift` (not anticipated above — see sub-step 2's edge cases)
+- `EnjoeiProducts/Presentation/Shared/UITestingFlag.swift` (consolidates the two `-uiTesting*` launch-argument checks that were previously duplicated as an inconsistent named-constant-vs-bare-literal pair, found during code review)
 
 Changed:
-- `EnjoeiProducts/Presentation/ProductList/ProductListViewController.swift` (accessibility identifiers on `collectionView`/`skeletonView`/both clear buttons)
-- `EnjoeiProducts/Presentation/ProductList/ProductCell.swift` (`textStyle`-aware fonts via `InsetLabel` for the badge, `adjustsFontForContentSizeCategory`, relaxed height constraint on `badgeLabel`, `priceStack` axis toggling for accessibility content-size categories)
+- `EnjoeiProducts/Presentation/ProductList/ProductListViewController.swift` (accessibility identifiers on `collectionView`/`skeletonView`/both clear buttons; `render()`/`viewDidAppear` VoiceOver announcements; `searchField` Dynamic Type + `UITextField.textDidChangeNotification` + `UITextFieldDelegate`; nav bar logo converted to a tappable `ExpandedHitAreaButton`)
+- `EnjoeiProducts/Presentation/ProductList/ProductCell.swift` (`textStyle`-aware fonts via `InsetLabel` for the badge, `adjustsFontForContentSizeCategory`, relaxed height constraint on `badgeLabel`, `priceStack` axis toggling for accessibility content-size categories, `maximumContentSizeCategory` caps, axis re-sync in `configure(with:)`)
 - `EnjoeiProducts/Presentation/ProductList/Views/EmptyStateView.swift` (`textStyle`-aware fonts, `accessibilityIdentifier` on its "limpar busca" button)
-- `EnjoeiProducts/Presentation/ProductList/ProductListViewModel.swift` (`-uiTestingArtificialDelay` launch-argument hook in `loadInitialPage()` — not anticipated above)
+- `EnjoeiProducts/Presentation/ProductList/ProductListViewModel.swift` (`-uiTestingArtificialDelay` launch-argument hook in `loadInitialPage()`, now via `UITestingFlag`)
 - `EnjoeiProducts/Presentation/Shared/AppFont.swift` (new optional `textStyle` and `compatibleWith traitCollection` parameters on `uiFont`; `textStyle` on `font`)
 - `EnjoeiProductsTests/Presentation/AppFontTests.swift` (new Dynamic Type scaling test cases)
 
@@ -101,3 +132,4 @@ Changed:
 - `xcodebuild -project EnjoeiProducts.xcodeproj -scheme EnjoeiProducts -destination 'platform=iOS Simulator,name=iPhone 17' -skipPackagePluginValidation test` — all existing tests plus the new performance test pass.
 - `EnjoeiProductsUITests` target run via `Cmd+U` (or `-only-testing:EnjoeiProductsUITests`) — all 4 new UI tests pass against the real API. Requires network access and a non-empty liked-products account, same precondition as any manual run.
 - Manual: Settings → Accessibility → Larger Text → drag to maximum, relaunch, walk the same 6 states as the Phase 3 End-stage check — confirm no text clipping/overlap in `ProductCell`, the empty state, or the search row.
+- Manual, VoiceOver on, gesture-based navigation (swipe + double-tap, plus keyboard dictation) — confirmed by the developer in the Simulator: loading announces "Carregando produtos"; a dictated search that matches announces a result count; a dictated search with no match announces "Nenhum produto encontrado"; the "buscar" keyboard return key dismisses the keyboard and leaves the search field focused; the nav bar logo (now a button) resets the screen on both a sighted tap and a VoiceOver double-tap, with no visual artifact. Not confirmed: focus reliably landing on the logo the instant loading finishes — see sub-step 4's Simulator-limitation note. Real-device retest recommended before treating this as fully closed.
