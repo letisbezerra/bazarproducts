@@ -9,8 +9,8 @@ This is the durable copy of our build-out plan, kept in the repo so any future s
 | 0 — Standards & tooling | `feature/project-standards` | `docs/specs/00-project-standards.md` | Merged — [#1](https://github.com/letisbezerra/bazarproducts/pull/1) |
 | 1 — Core & networking | `feature/core-networking` | `docs/specs/01-core-networking.md` | Merged — [#2](https://github.com/letisbezerra/bazarproducts/pull/2) |
 | 2 — Domain & Data | `feature/domain-data` | `docs/specs/02-domain-data.md` | Merged — [#3](https://github.com/letisbezerra/bazarproducts/pull/3) |
-| 3 — Product list screen | `feature/product-list-screen` | `docs/specs/03-product-list-screen.md` | PR open — [#4](https://github.com/letisbezerra/bazarproducts/pull/4) |
-| 4 — UI tests, accessibility & performance | `feature/ui-tests-and-polish` | `docs/specs/04-ui-tests-and-polish.md` | Not started |
+| 3 — Product list screen | `feature/product-list-screen` | `docs/specs/03-product-list-screen.md` | Merged — [#4](https://github.com/letisbezerra/bazarproducts/pull/4) |
+| 4 — UI tests, accessibility & performance | `feature/ui-tests-and-polish` | `docs/specs/04-ui-tests-and-polish.md` | PR open — [#5](https://github.com/letisbezerra/bazarproducts/pull/5) |
 | 5 — Docs & release | `chore/release-prep` (or direct on `develop`) | `docs/specs/05-docs-and-release.md` | Not started |
 
 ## Open blockers / needs input
@@ -125,7 +125,7 @@ Tests (`EnjoeiProductsTests/Presentation/`): `ProductListViewModelTests` — ini
 Spec: `docs/specs/04-ui-tests-and-polish.md` — the four flows to be scripted as XCUITest scenarios (given/when/then), accessibility labels to add, and the performance check's pass/fail threshold.
 
 - `EnjoeiProductsUITests/ProductListUITests.swift` covering the four mandatory Figma flows end-to-end: launch → skeletons → results render; scroll to bottom → more cells load; type a matching query → filtered grid; type a non-matching query → "ué, não encontramos nadinha" → tap "limpar busca" → full grid returns. This directly satisfies the job posting's "testes unitários e de interface do usuário" line.
-- Accessibility pass: `accessibilityLabel`s on price/discount/search elements, Dynamic Type sanity check on `ProductCell`.
+- Accessibility pass: **initially re-scoped after checking Phase 3's HIG audit** to just a Dynamic Type sanity check, on the assumption that `accessibilityLabel`s on price/discount and the search field/"limpar busca" button (done in Phase 3, `docs/DESIGN_GUIDE.md` §7) meant VoiceOver support was otherwise complete. **That assumption was wrong** — a hands-on VoiceOver walkthrough (swipe navigation, double-tap activation, keyboard dictation) found the screen's dynamic state changes (loading, search results, errors) were entirely silent, since having a label on an element doesn't make VoiceOver announce it when it *appears*; that requires explicitly posting `UIAccessibility.post(...)`. Fixed in a 4th sub-step — see `docs/specs/04-ui-tests-and-polish.md` sub-step 4 for the full detail, including a genuine, still-open Simulator-vs-real-device VoiceOver reliability gap.
 - Performance check: with ~1,262 real liked products (32 pages) once several pages are loaded, confirm the local search filter stays smooth on the main thread; move filtering to a background queue only if it actually shows jank (don't pre-optimize).
 
 ## Phase 5 — Docs & release (`chore/release-prep` off `develop`, or direct on `develop`)

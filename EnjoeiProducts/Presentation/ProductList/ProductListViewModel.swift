@@ -65,6 +65,15 @@ final class ProductListViewModel {
         state = .loading
         currentPage = 1
 
+        if UITestingFlag.artificialDelay.isEnabled {
+            // Real API, no mock -- fast responses can make the loading state too transient
+            // for ProductListUITests to observe. XCUITest's own post-launch attach/sync
+            // overhead alone measured at ~9s in one run (before the test's first assertion
+            // even executes), so a short delay gets outlasted by that overhead alone,
+            // independent of network speed. 15s gives real margin over that.
+            try? await Task.sleep(nanoseconds: 15_000_000_000)
+        }
+
         do {
             let page = try await useCase.execute(page: currentPage)
             products = page.items

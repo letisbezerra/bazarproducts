@@ -7,6 +7,9 @@ final class ProductListViewController: UIViewController {
     }
 
     private static let interItemSpacing: CGFloat = 8
+    // Shared by the skeleton's accessibilityLabel and both places that announce loading
+    // (viewDidAppear for the first load, render() for a retry) -- previously typed out 3 times.
+    private static let loadingAnnouncement = "Carregando produtos"
 
     private let viewModel: ProductListViewModel
 
@@ -16,6 +19,7 @@ final class ProductListViewController: UIViewController {
         collectionView.register(ProductCell.self, forCellWithReuseIdentifier: ProductCell.reuseIdentifier)
         collectionView.delegate = self
         collectionView.prefetchDataSource = self
+        collectionView.accessibilityIdentifier = "productCollectionView"
         return collectionView
     }()
 
@@ -38,7 +42,13 @@ final class ProductListViewController: UIViewController {
     private let searchField: UITextField = {
         let textField = UITextField()
         textField.placeholder = "buscar"
-        textField.font = AppFont.uiFont(size: 15, weight: .regular)
+        textField.font = AppFont.uiFont(size: 15, weight: .regular, textStyle: .subheadline)
+        textField.adjustsFontForContentSizeCategory = true
+        // searchField/searchRow are pinned to a hard, Figma-measured 42pt height below (not a
+        // fitting/minimum height), so this field's text can't be allowed to scale as far as
+        // the badge/price labels (which live in a taller, more forgiving layout) without
+        // clipping inside that fixed box.
+        textField.maximumContentSizeCategory = .extraExtraExtraLarge
         textField.backgroundColor = .systemBackground
         textField.layer.cornerRadius = 8
         textField.layer.borderWidth = 1.5
@@ -69,6 +79,7 @@ final class ProductListViewController: UIViewController {
         configuration.baseForegroundColor = BrandColor.uiColor
         let button = ExpandedHitAreaButton(configuration: configuration)
         button.isHidden = true
+        button.accessibilityIdentifier = "inlineClearSearchButton"
         return button
     }()
 
@@ -112,6 +123,15 @@ final class ProductListViewController: UIViewController {
         rootView: EmptyStateView(onClearSearch: { [weak self] in self?.clearSearch() })
     )
 
+    // VoiceOver never announces a screen's dynamic changes on its own -- without explicitly
+    // posting these, a loading/search/no-results transition is completely silent unless the
+    // user happens to already be swiped onto the element that changed. These two track what
+    // was last announced so render() (called on every viewModel.onChange, including
+    // pagination) only posts on an actual transition, not on every re-render.
+    private var previousState: ProductListViewModel.State?
+    private var previousAnnouncedSearchText: String?
+    private lazy var logoButton = makeLogoView()
+
     init(viewModel: ProductListViewModel) {
         self.viewModel = viewModel
         super.init(nibName: nil, bundle: nil)
@@ -125,7 +145,7 @@ final class ProductListViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
-        navigationItem.titleView = makeLogoView()
+        navigationItem.titleView = logoButton
         configureNavigationBarDivider()
 
         setUpViews()
@@ -139,7 +159,21 @@ final class ProductListViewController: UIViewController {
         }
     }
 
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        // A post from render()/setUpViews() during viewDidLoad happens before the view is
+        // actually on screen and can be silently dropped by VoiceOver -- viewDidAppear is
+        // Apple's documented safe point for a screen's first announcement. Guarded to the
+        // still-loading case so this never double-announces if the fetch already finished.
+        if viewModel.state == .loading {
+            UIAccessibility.post(notification: .announcement, argument: Self.loadingAnnouncement)
+        }
+    }
+
     private func render() {
+        let stateChanged = viewModel.state != previousState
+        defer { previousState = viewModel.state }
+
         switch viewModel.state {
         case .loading:
             skeletonView.isHidden = false
@@ -147,6 +181,14 @@ final class ProductListViewController: UIViewController {
             errorView.isHidden = true
             emptyStateHostingController.view.isHidden = true
             paginationIndicator.stopAnimating()
+
+            // previousState == nil is the very first render (during viewDidLoad, before the
+            // view is on screen) -- that announcement is handled by viewDidAppear instead,
+            // since a post this early can be silently dropped. This branch only fires for a
+            // later retry, when the screen is already visible.
+            if stateChanged, previousState != nil {
+                UIAccessibility.post(notification: .announcement, argument: Self.loadingAnnouncement)
+            }
 
         case .loaded:
             skeletonView.isHidden = true
@@ -162,6 +204,25 @@ final class ProductListViewController: UIViewController {
                 paginationIndicator.stopAnimating()
             }
 
+            if stateChanged {
+                // .screenChanged is meant for an actual new screen/view controller appearing;
+                // this is the same screen with its content updated, which is exactly what
+                // .layoutChanged (not .screenChanged) is documented for -- redirecting VoiceOver
+                // focus to a specific already-on-screen element without treating it as
+                // navigation. A nil argument also left VoiceOver to guess the target, which in
+                // practice landed outside this screen entirely (e.g. the status bar).
+                UIAccessibility.post(notification: .layoutChanged, argument: logoButton)
+            }
+            // Deliberately not an "else if": a user can type a search while the initial page is
+            // still loading (the search field isn't disabled during .loading), so the very
+            // render() call where loading finishes can ALSO be the one where the search result
+            // first needs announcing -- an else-if here would let the loading announcement win
+            // and silently swallow the search-result one.
+            if viewModel.searchText != previousAnnouncedSearchText {
+                announceSearchResult(showsEmptyState: showsEmptyState)
+            }
+            previousAnnouncedSearchText = viewModel.searchText
+
         case .error(let message):
             skeletonView.isHidden = true
             collectionView.isHidden = true
@@ -169,7 +230,19 @@ final class ProductListViewController: UIViewController {
             errorView.isHidden = false
             errorLabel.text = message
             paginationIndicator.stopAnimating()
+
+            if stateChanged {
+                UIAccessibility.post(notification: .announcement, argument: message)
+            }
         }
+    }
+
+    private func announceSearchResult(showsEmptyState: Bool) {
+        guard !viewModel.searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        let announcement = showsEmptyState
+            ? "Nenhum produto encontrado para \(viewModel.searchText)"
+            : "\(viewModel.displayedProducts.count) produtos encontrados"
+        UIAccessibility.post(notification: .announcement, argument: announcement)
     }
 
     private func updateClearSearchButtonVisibility() {
@@ -181,6 +254,14 @@ final class ProductListViewController: UIViewController {
         snapshot.appendSections([.main])
         snapshot.appendItems(viewModel.displayedProducts)
         dataSource.apply(snapshot, animatingDifferences: true)
+        // Test-only signal, gated behind a launch argument so it's never set for a real
+        // user (accessibilityValue is read aloud by VoiceOver -- a raw item count would be
+        // a confusing announcement). UICollectionView recycles off-screen cells, so
+        // collectionView.cells.count (what XCUITest can otherwise observe) never reflects
+        // the true number of loaded items, only however many currently fit on screen.
+        if UITestingFlag.exposesLoadedItemCount.isEnabled {
+            collectionView.accessibilityValue = "\(viewModel.displayedProducts.count)"
+        }
     }
 
     private func clearSearch() {
@@ -193,6 +274,12 @@ final class ProductListViewController: UIViewController {
     @objc
     private func clearSearchTapped() {
         clearSearch()
+    }
+
+    @objc
+    private func logoTapped() {
+        clearSearch()
+        collectionView.setContentOffset(.zero, animated: true)
     }
 
     @objc
@@ -229,21 +316,60 @@ private extension ProductListViewController {
         navigationController?.navigationBar.compactAppearance = appearance
     }
 
-    func makeLogoView() -> UIImageView {
-        let logoImageView = UIImageView(image: UIImage(named: "EnjoeiLogo"))
-        logoImageView.contentMode = .scaleAspectFit
-        logoImageView.isAccessibilityElement = true
-        logoImageView.accessibilityLabel = "Enjoei"
-        logoImageView.translatesAutoresizingMaskIntoConstraints = false
+    // A button (not a plain UIImageView) so tapping the logo to reset the screen works
+    // identically for a sighted tap and for a VoiceOver double-tap -- one mechanism for both,
+    // instead of bolting a gesture recognizer onto an image. ExpandedHitAreaButton widens the
+    // tappable area to HIG's 44x44pt minimum without growing the logo past its 32x32 visual size.
+    func makeLogoView() -> ExpandedHitAreaButton {
+        // UIButton.Configuration.plain() with only an image set rendered a stray artifact
+        // (a thin line through the logo) -- likely the configuration system still allocating
+        // layout for an empty title. The classic .custom + setImage(_:for:) API has no such
+        // title-layout behavior and renders identically to the original plain UIImageView.
+        let button = ExpandedHitAreaButton(type: .custom)
+        button.setImage(UIImage(named: "EnjoeiLogo"), for: .normal)
+        // Without explicit fill alignment, UIButton sizes its imageView to the image's own
+        // intrinsic (likely @3x, much larger than 32x32) size and centers it, rather than
+        // scaling to the button's bounds -- cropping most of the logo to a tiny sliver.
+        // .fill alignment makes the imageView span the button's content area first, so
+        // .scaleAspectFit then has the right frame to scale within.
+        button.contentHorizontalAlignment = .fill
+        button.contentVerticalAlignment = .fill
+        button.imageView?.contentMode = .scaleAspectFit
+        // Folded into the label itself (not just accessibilityHint) since VoiceOver's "speak
+        // hints" is a setting some users disable -- a label-only description guarantees a
+        // user landing here from the search field still understands this is the way back,
+        // instead of relying on a hint that might never be spoken.
+        button.accessibilityLabel = "Enjoei, início"
+        button.addTarget(self, action: #selector(logoTapped), for: .touchUpInside)
+        button.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            logoImageView.widthAnchor.constraint(equalToConstant: 32),
-            logoImageView.heightAnchor.constraint(equalToConstant: 32)
+            button.widthAnchor.constraint(equalToConstant: 32),
+            button.heightAnchor.constraint(equalToConstant: 32)
         ])
-        return logoImageView
+        return button
     }
 
     func setUpViews() {
-        searchField.addTarget(self, action: #selector(searchFieldDidChange), for: .editingChanged)
+        // A plain UIView with no accessible descendants isn't reliably surfaced in the
+        // accessibility tree just by having an identifier -- without this, ProductListUITests'
+        // query for it was flaky (present in the automation snapshot on some runs, absent on
+        // others). Marking it an element directly makes it unambiguous, and giving it a real
+        // label (rather than leaving it silent) also fixes a genuine VoiceOver gap: without
+        // one, a VoiceOver user swiping through the loading screen would land on an unlabeled
+        // stop instead of hearing that content is loading.
+        skeletonView.isAccessibilityElement = true
+        skeletonView.accessibilityLabel = Self.loadingAnnouncement
+        skeletonView.accessibilityIdentifier = "skeletonGridView"
+        // .editingChanged doesn't reliably fire for dictated text (it's inserted through a
+        // different path than character-by-character typing) -- textDidChangeNotification
+        // fires for any text change regardless of input method (typing, dictation, paste).
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(searchFieldDidChange),
+            name: UITextField.textDidChangeNotification,
+            object: searchField
+        )
+        searchField.delegate = self
         clearSearchButton.addTarget(self, action: #selector(clearSearchTapped), for: .touchUpInside)
 
         let dismissKeyboardTap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
@@ -353,6 +479,18 @@ extension ProductListViewController: UICollectionViewDelegate {}
 extension ProductListViewController: UIGestureRecognizerDelegate {
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
         !(touch.view?.isDescendant(of: searchField) ?? false)
+    }
+}
+
+extension ProductListViewController: UITextFieldDelegate {
+    // Nothing previously handled the keyboard's "buscar" return key -- it just sat there with
+    // no effect. Dismissing the keyboard here leaves the search field itself as the last
+    // focused element, so swiping from it (with VoiceOver, or otherwise continuing to use the
+    // screen) naturally reaches the next element (e.g. "limpar busca") instead of leaving the
+    // keyboard up indefinitely.
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        textField.resignFirstResponder()
+        return true
     }
 }
 
