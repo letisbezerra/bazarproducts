@@ -11,7 +11,7 @@ One screen — a product listing — with several mandatory extra states. All va
 - **Infinite pagination**: scrolling near the bottom transparently loads the next page (no full-screen blocking spinner).
 - **Search**: a field that filters results **locally** by text. Two states get special attention: search filled with matches, and — most importantly — the no-results state: "ué, não encontramos nadinha".
 
-Design reference: Figma file (password: `REDACTED`), which contains every state above.
+Design reference: a Figma file shared privately by Enjoei for this test, containing every state above — analyzed and extracted into `docs/DESIGN_GUIDE.md`.
 
 ## 2. AI usage — the ground rules
 

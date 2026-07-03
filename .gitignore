@@ -1,0 +1,15 @@
+# macOS
+.DS_Store
+
+# Xcode
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+DerivedData/
+.build/
+
+# Swift Package Manager
+.swiftpm/
+
+# Claude Code CLI runtime state (not project content)
+.claude/

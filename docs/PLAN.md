@@ -1,6 +1,6 @@
 # Implementation plan — EnjoeiProducts
 
-This is the durable copy of our build-out plan, kept in the repo so any future session (or reviewer) can pick up exactly where we left off without relying on chat history. Update the status table below as phases complete — it doubles as visible progress tracking, in the spirit of the shape-up/transparency culture `docs/TEST_BRIEF.md` describes.
+This is the durable copy of our build-out plan, kept in the repo so any future session (or reviewer) can pick up exactly where we left off without relying on chat history. Update the status table below as phases complete — it doubles as visible progress tracking, in the spirit of the shape-up/transparency culture `docs/CONTEXT_TEST.md` describes.
 
 ## Status
 
@@ -9,13 +9,24 @@ This is the durable copy of our build-out plan, kept in the repo so any future s
 | 0 — Standards & tooling | `feature/project-standards` | `docs/specs/00-project-standards.md` | Merged — [#1](https://github.com/letisbezerra/bazarproducts/pull/1) |
 | 1 — Core & networking | `feature/core-networking` | `docs/specs/01-core-networking.md` | Merged — [#2](https://github.com/letisbezerra/bazarproducts/pull/2) |
 | 2 — Domain & Data | `feature/domain-data` | `docs/specs/02-domain-data.md` | Merged — [#3](https://github.com/letisbezerra/bazarproducts/pull/3) |
-| 3 — Product list screen | `feature/product-list-screen` | `docs/specs/03-product-list-screen.md` | Not started |
+| 3 — Product list screen | `feature/product-list-screen` | `docs/specs/03-product-list-screen.md` | PR open — [#4](https://github.com/letisbezerra/bazarproducts/pull/4) |
 | 4 — UI tests, accessibility & performance | `feature/ui-tests-and-polish` | `docs/specs/04-ui-tests-and-polish.md` | Not started |
 | 5 — Docs & release | `chore/release-prep` (or direct on `develop`) | `docs/specs/05-docs-and-release.md` | Not started |
 
+## Open blockers / needs input
+
+Things a phase surfaced that only the developer can resolve (a design asset, a product decision, an account permission). Checked off as resolved, not deleted, so the history of what needed a human call stays visible.
+
+- [x] **No visual access to the Figma file at all** — partially resolved: the developer shared a screenshot of the six flow frames (Loading, Results, Pagination, Search Empty/Filled, No Results), analyzed into `docs/DESIGN_GUIDE.md`. This gives real layout/behavior detail (badge format, price ordering, search bar/"limpar busca" behavior, empty-state structure) that wasn't in `docs/ARCHITECTURE.md`'s text-only table before.
+- [x] **Brand color + price/badge typography** — resolved via Figma Dev Mode crops: exact hex `#61005D` (now the `BrandPurple` asset). Font family "ProximaNova" is a paid font; developer decided to bundle the open-source Montserrat font (SIL OFL) instead of substituting the system font — price text kept at regular weight (deliberate override of the measured 12pt/semibold) and the badge reduced to 10pt (deliberate override of the measured 12px). Full detail in `docs/DESIGN_GUIDE.md` §6.
+- [x] **Grid spacing/corner radius calibration** — resolved via more Dev Mode crops: 16pt screen margin, 8pt grid gutter (both confirmed to match what was already implemented as a guess), 16pt product card corner radius (was 12pt, corrected), badge/price container padding. `ProductCell`'s compositional layout also corrected to make each card **square** (was assumed to be a tall rectangle) — computed dynamically from the actual screen width rather than hardcoding Figma's 163pt reference-frame measurement, so it scales on other device sizes.
+- [x] **Remaining spacing/typography calibration** — search bar container resolved via Dev Mode crop: 335×60 header bar, 335×42 search box (see `docs/DESIGN_GUIDE.md` §6). Headline/subtitle exact sizing and the "limpar busca" button's exact padding remain HIG-default guesses.
+- [x] **Mascot illustration for "No Results"** — resolved: developer exported the real illustration from Figma (`EmptyStateMascot` in `Assets.xcassets`, replacing the SF Symbol placeholder in `EmptyStateView.swift`).
+- [x] **Apple HIG audit (contrast + interactions)** — requested by the developer, resolved: full writeup in `docs/DESIGN_GUIDE.md` §7. `.secondaryLabel` failed WCAG AA for small text (~3.44:1, needs 4.5:1) and was replaced with a solid `ReadableGray` (~7:1) at the three small-text call sites; two tap targets under 44pt (inline "limpar busca", "tentar novamente") were fixed without changing their Figma-matched visual size; `ProductCell` gained a combined `accessibilityLabel` for VoiceOver. In-field microphone dictation was explicitly descoped — the developer chose to rely on and verify the native iOS keyboard dictation button instead of building a custom Speech-framework feature.
+
 ## Context
 
-This is the Enjoei iOS Pleno technical test: a single screen (liked products list) with loading, infinite pagination, and local search, evaluated against the job's own responsibilities/requirements (Swift + Apple ecosystem, Gitflow, SOLID/Clean Architecture, unit **and UI** tests, observability, clear technical docs, performance/UX — see `docs/TEST_BRIEF.md` for the literal requirements). Setup already done: converted the Xcode template from SwiftUI to UIKit (`AppDelegate`/`SceneDelegate`/placeholder `ProductListViewController`), written `docs/ARCHITECTURE.md`, `docs/TEST_BRIEF.md`, `README.md`, `CLAUDE.md`, and set up Gitflow (`main`/`develop`, both pushed to `origin`). No feature code exists yet.
+This is the Enjoei iOS Pleno technical test: a single screen (liked products list) with loading, infinite pagination, and local search, evaluated against the job's own responsibilities/requirements (Swift + Apple ecosystem, Gitflow, SOLID/Clean Architecture, unit **and UI** tests, observability, clear technical docs, performance/UX — see `docs/CONTEXT_TEST.md` for the literal requirements). Setup already done: converted the Xcode template from SwiftUI to UIKit (`AppDelegate`/`SceneDelegate`/placeholder `ProductListViewController`), written `docs/ARCHITECTURE.md`, `docs/CONTEXT_TEST.md`, `README.md`, `CLAUDE.md`, and set up Gitflow (`main`/`develop`, both pushed to `origin`). No feature code exists yet.
 
 We hit the real API directly to remove guesswork before planning the Data layer:
 - `GET https://www.enjoei.com.br/api/v5/users/enjoei-pro/products/liked?page=N` returns `{ products: [...], pagination: {...}, title, empty_state }`.
@@ -39,20 +50,22 @@ Every phase in this plan — no exceptions — goes through the same three stage
 
 ### Middle
 
-1. Re-read `docs/TEST_BRIEF.md` (requirements), `docs/ARCHITECTURE.md` (architecture decisions), this file (the plan), and any other doc/code relevant to the phase.
+1. Re-read `docs/CONTEXT_TEST.md` (requirements), `docs/ARCHITECTURE.md` (architecture decisions), this file (the plan), and any other doc/code relevant to the phase.
 2. Check the intended solution is still coherent with all of the above. If something drifted since the plan was written (e.g. a fact discovered from the real API), reconcile it now, before writing anything — don't carry a stale assumption into the spec.
 3. Once coherent: write `docs/specs/NN-phase-name.md` — **first commit on the branch, before any `.swift` file**. Each spec covers: goal/scope, inputs, outputs (public types/function signatures being introduced), error/edge cases to handle, files to be created or changed, and the list of test cases that will prove it. This is reviewed before implementation starts.
 4. Implement exactly what the spec describes.
 
 ### End
 
-1. If the phase produces something testable, run a test plan: the automated tests the spec listed, plus manual verification where automated tests can't cover it (e.g. comparing the running app against the Figma states). Running these myself isn't enough — hand over a concrete, numbered step-by-step (exact menu items/shortcuts in Xcode, exact test names, what result to expect) so the developer can personally validate on her own Xcode + Simulator before the phase is considered done. Passing tests I ran and reported is not the same as her having verified it.
+1. If the phase produces something testable, run a test plan: the automated tests the spec listed, plus manual verification where automated tests can't cover it (e.g. comparing the running app against the Figma states). Running these myself isn't enough — hand over a concrete, numbered step-by-step (exact menu items/shortcuts in Xcode, exact test names, what result to expect) so the developer can personally validate on her own Xcode + Simulator before the phase is considered done. Passing tests I ran and reported is not the same as her having verified it. **This hand-off happens before staging/committing the code it validates, not after** — commit only once she's confirmed, so a commit is never made ahead of the validation that's supposed to gate it.
 2. Check coherence again: does the implementation actually match the spec? If anything diverged during implementation, update the spec doc now so it stays true, not aspirational.
 3. Run a rigorous review before the PR exists, not after: the `finish-task` skill (QA/merge-readiness validation) and the `code-review` skill (correctness bugs, reuse/simplification findings on the diff). Fix what they surface.
 4. Check for conflicts with `develop` (`git fetch` + a merge preview) and resolve any *before* opening the PR, never after.
 5. Open the PR to `develop`, with a description documenting what changed and why. Update the status table at the top of this file.
 
 Spec docs live in `docs/specs/`, numbered to match phase order. They stay in the repo after merge as a paper trail of what was decided and why.
+
+**For a large phase implemented in sub-steps** (e.g. Phase 3 built as ViewModel → view layer → wiring, each with its own build/test cycle): the End-stage step 1 hand-off applies at the end of *each* sub-step, not only once at the very end of the whole phase. Report progress and a validation step-by-step after every sub-step completes, not just at the final one — the developer confirms incrementally, not in one batch at the end.
 
 ## Phase 0 — Standards & tooling (`feature/project-standards`)
 
@@ -119,9 +132,10 @@ Spec: `docs/specs/04-ui-tests-and-polish.md` — the four flows to be scripted a
 
 Spec: `docs/specs/05-docs-and-release.md` — checklist of what must be reconciled between `ARCHITECTURE.md`/README and what was actually built, and the exact release checklist (CI status, PR, zip).
 
-- Update `docs/ARCHITECTURE.md` with the two corrections found during Phase 2 (pagination via `next_page`, image URL as plain concatenation) and the Phase 4 addition of UI tests, so the doc matches what was actually built (job posting: "manter a documentação técnica sempre atualizada").
-- Fill in the README's "AI usage" section for real, based on what was actually delegated to AI vs. done by hand across these phases.
-- Confirm CI is green on `develop`, open the `develop` → `main` PR, then zip the project per `docs/TEST_BRIEF.md`'s delivery instructions.
+- ~~Update `docs/ARCHITECTURE.md` with the pagination (`next_page`) correction and the UI-tests reversal~~ — done early, during Phase 3's documentation audit, instead of waiting until this phase: an evaluator reading `ARCHITECTURE.md` mid-project shouldn't see it contradict the actual code. `ARCHITECTURE.md`'s folder structure (§6) was also corrected to match what was actually built (network code under `Core/`, not `Data/Network/`; `Presentation/Shared/` added).
+- Fill in the README's "AI usage" section for real, consolidating `docs/AI_USAGE_LOG.md` (a running log kept since Phase 3, added specifically so this section wouldn't need to be reconstructed from memory at the end).
+- **Delivery cleanup, decided with the developer during Phase 3's documentation audit**: the zip that goes to Enjoei should only contain `README.md` and `docs/ARCHITECTURE.md` as documentation — everything else here (`docs/CONTEXT_TEST.md`, `docs/PLAN.md`, `docs/specs/*.md`, `docs/AI_USAGE_LOG.md`, `CLAUDE.md`) is internal planning/process scaffolding for working with AI across sessions, not useful to an outside reader, and gets deleted from the working tree in one commit right before zipping (not before — these docs are still needed to finish Phases 4-5). `docs/DESIGN_GUIDE.md` is undecided: keep as-is, keep after a tone cleanup (it currently reads as internal notes, e.g. "best guess," "confirm with developer"), or also remove — revisit at the time.
+- Confirm CI is green on `develop`, open the `develop` → `main` PR, then zip the project per `docs/CONTEXT_TEST.md`'s delivery instructions.
 
 ## Verification (per phase)
 

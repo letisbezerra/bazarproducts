@@ -24,10 +24,14 @@ final class URLProtocolStub: URLProtocol {
         lastRequest = nil
     }
 
+    // Overrides URLProtocol's `class func`; `static` can't override it.
+    // swiftlint:disable:next static_over_final_class
     override class func canInit(with request: URLRequest) -> Bool {
         true
     }
 
+    // Overrides URLProtocol's `class func`; `static` can't override it.
+    // swiftlint:disable:next static_over_final_class
     override class func canonicalRequest(for request: URLRequest) -> URLRequest {
         request
     }
