@@ -41,7 +41,7 @@ final class ProductListViewController: UIViewController {
         textField.font = AppFont.uiFont(size: 15, weight: .regular)
         textField.backgroundColor = .systemBackground
         textField.layer.cornerRadius = 8
-        textField.layer.borderWidth = 1
+        textField.layer.borderWidth = 1.5
         textField.layer.borderColor = UIColor(named: "HeaderDivider")?.cgColor
         textField.returnKeyType = .search
         textField.clearButtonMode = .never
@@ -67,7 +67,7 @@ final class ProductListViewController: UIViewController {
         var configuration = UIButton.Configuration.plain()
         configuration.title = "limpar busca"
         configuration.baseForegroundColor = BrandColor.uiColor
-        let button = UIButton(configuration: configuration)
+        let button = ExpandedHitAreaButton(configuration: configuration)
         button.isHidden = true
         return button
     }()
@@ -84,7 +84,7 @@ final class ProductListViewController: UIViewController {
         let label = UILabel()
         label.textAlignment = .center
         label.numberOfLines = 0
-        label.textColor = .secondaryLabel
+        label.textColor = ReadableGray.uiColor
         return label
     }()
 
@@ -92,6 +92,9 @@ final class ProductListViewController: UIViewController {
         var configuration = UIButton.Configuration.filled()
         configuration.title = "tentar novamente"
         configuration.baseBackgroundColor = BrandColor.uiColor
+        // HIG minimum tap target is 44x44pt; the default filled-button insets
+        // don't reach that height on their own.
+        configuration.contentInsets = NSDirectionalEdgeInsets(top: 13, leading: 24, bottom: 13, trailing: 24)
         let button = UIButton(configuration: configuration)
         button.addTarget(self, action: #selector(retryTapped), for: .touchUpInside)
         return button
@@ -134,99 +137,6 @@ final class ProductListViewController: UIViewController {
         Task {
             await viewModel.loadInitialPage()
         }
-    }
-
-    /// Figma measures the header bar's bottom border as 1.5px `#F1EEEC` -- the system
-    /// nav bar's default hairline is a different gray, so it's recolored here to match.
-    private func configureNavigationBarDivider() {
-        let appearance = UINavigationBarAppearance()
-        appearance.configureWithOpaqueBackground()
-        appearance.backgroundColor = .systemBackground
-        appearance.shadowColor = UIColor(named: "HeaderDivider")
-
-        navigationController?.navigationBar.standardAppearance = appearance
-        navigationController?.navigationBar.scrollEdgeAppearance = appearance
-        navigationController?.navigationBar.compactAppearance = appearance
-    }
-
-    private func makeLogoView() -> UIImageView {
-        let logoImageView = UIImageView(image: UIImage(named: "EnjoeiLogo"))
-        logoImageView.contentMode = .scaleAspectFit
-        logoImageView.isAccessibilityElement = true
-        logoImageView.accessibilityLabel = "Enjoei"
-        logoImageView.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            logoImageView.widthAnchor.constraint(equalToConstant: 32),
-            logoImageView.heightAnchor.constraint(equalToConstant: 32)
-        ])
-        return logoImageView
-    }
-
-    private func setUpViews() {
-        searchField.addTarget(self, action: #selector(searchFieldDidChange), for: .editingChanged)
-        clearSearchButton.addTarget(self, action: #selector(clearSearchTapped), for: .touchUpInside)
-
-        let dismissKeyboardTap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
-        dismissKeyboardTap.cancelsTouchesInView = false
-        dismissKeyboardTap.delegate = self
-        view.addGestureRecognizer(dismissKeyboardTap)
-
-        addChild(emptyStateHostingController)
-        emptyStateHostingController.didMove(toParent: self)
-
-        let searchRow = UIStackView(arrangedSubviews: [searchField, clearSearchButton])
-        searchRow.axis = .horizontal
-        searchRow.alignment = .center
-        searchRow.spacing = 8
-
-        [
-            searchRow, collectionView, skeletonView, errorView,
-            emptyStateHostingController.view, paginationIndicator
-        ].forEach {
-            $0.translatesAutoresizingMaskIntoConstraints = false
-            view.addSubview($0)
-        }
-
-        NSLayoutConstraint.activate([
-            searchRow.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
-            searchRow.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-            searchRow.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-
-            // Neither searchRow nor collectionView has both edges pinned independently of
-            // the other, so without an explicit height here Auto Layout treats searchRow's
-            // height as a free variable and can inflate it arbitrarily to satisfy the rest
-            // of the chain -- pin it to Figma's measured 335x42 search box.
-            searchRow.heightAnchor.constraint(equalToConstant: 42),
-            searchField.heightAnchor.constraint(equalToConstant: 42),
-
-            collectionView.topAnchor.constraint(equalTo: searchRow.bottomAnchor, constant: 8),
-            collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-            collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-            collectionView.bottomAnchor.constraint(equalTo: paginationIndicator.topAnchor, constant: -8),
-
-            skeletonView.topAnchor.constraint(equalTo: collectionView.topAnchor),
-            skeletonView.leadingAnchor.constraint(equalTo: collectionView.leadingAnchor),
-            skeletonView.trailingAnchor.constraint(equalTo: collectionView.trailingAnchor),
-            skeletonView.bottomAnchor.constraint(equalTo: collectionView.bottomAnchor),
-
-            errorView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            errorView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-            errorView.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor, constant: 32),
-            errorView.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -32),
-
-            emptyStateHostingController.view.topAnchor.constraint(equalTo: collectionView.topAnchor),
-            emptyStateHostingController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            emptyStateHostingController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            emptyStateHostingController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-
-            paginationIndicator.bottomAnchor.constraint(
-                equalTo: view.safeAreaLayoutGuide.bottomAnchor,
-                constant: -8
-            ),
-            paginationIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor)
-        ])
-
-        render()
     }
 
     private func render() {
@@ -301,11 +211,108 @@ final class ProductListViewController: UIViewController {
     private func dismissKeyboard() {
         view.endEditing(true)
     }
+}
+
+// MARK: - View setup
+
+private extension ProductListViewController {
+    /// Figma measures the header bar's bottom border as 1.5px `#F1EEEC` -- the system
+    /// nav bar's default hairline is a different gray, so it's recolored here to match.
+    func configureNavigationBarDivider() {
+        let appearance = UINavigationBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = .systemBackground
+        appearance.shadowColor = UIColor(named: "HeaderDivider")
+
+        navigationController?.navigationBar.standardAppearance = appearance
+        navigationController?.navigationBar.scrollEdgeAppearance = appearance
+        navigationController?.navigationBar.compactAppearance = appearance
+    }
+
+    func makeLogoView() -> UIImageView {
+        let logoImageView = UIImageView(image: UIImage(named: "EnjoeiLogo"))
+        logoImageView.contentMode = .scaleAspectFit
+        logoImageView.isAccessibilityElement = true
+        logoImageView.accessibilityLabel = "Enjoei"
+        logoImageView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            logoImageView.widthAnchor.constraint(equalToConstant: 32),
+            logoImageView.heightAnchor.constraint(equalToConstant: 32)
+        ])
+        return logoImageView
+    }
+
+    func setUpViews() {
+        searchField.addTarget(self, action: #selector(searchFieldDidChange), for: .editingChanged)
+        clearSearchButton.addTarget(self, action: #selector(clearSearchTapped), for: .touchUpInside)
+
+        let dismissKeyboardTap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+        dismissKeyboardTap.cancelsTouchesInView = false
+        dismissKeyboardTap.delegate = self
+        view.addGestureRecognizer(dismissKeyboardTap)
+
+        addChild(emptyStateHostingController)
+        emptyStateHostingController.didMove(toParent: self)
+
+        let searchRow = UIStackView(arrangedSubviews: [searchField, clearSearchButton])
+        searchRow.axis = .horizontal
+        searchRow.alignment = .center
+        searchRow.spacing = 8
+
+        [
+            searchRow, collectionView, skeletonView, errorView,
+            emptyStateHostingController.view, paginationIndicator
+        ].forEach {
+            $0.translatesAutoresizingMaskIntoConstraints = false
+            view.addSubview($0)
+        }
+
+        NSLayoutConstraint.activate([
+            searchRow.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
+            searchRow.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            searchRow.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+
+            // Neither searchRow nor collectionView has both edges pinned independently of
+            // the other, so without an explicit height here Auto Layout treats searchRow's
+            // height as a free variable and can inflate it arbitrarily to satisfy the rest
+            // of the chain -- pin it to Figma's measured 335x42 search box.
+            searchRow.heightAnchor.constraint(equalToConstant: 42),
+            searchField.heightAnchor.constraint(equalToConstant: 42),
+
+            collectionView.topAnchor.constraint(equalTo: searchRow.bottomAnchor, constant: 8),
+            collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            collectionView.bottomAnchor.constraint(equalTo: paginationIndicator.topAnchor, constant: -8),
+
+            skeletonView.topAnchor.constraint(equalTo: collectionView.topAnchor),
+            skeletonView.leadingAnchor.constraint(equalTo: collectionView.leadingAnchor),
+            skeletonView.trailingAnchor.constraint(equalTo: collectionView.trailingAnchor),
+            skeletonView.bottomAnchor.constraint(equalTo: collectionView.bottomAnchor),
+
+            errorView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            errorView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            errorView.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor, constant: 32),
+            errorView.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -32),
+
+            emptyStateHostingController.view.topAnchor.constraint(equalTo: collectionView.topAnchor),
+            emptyStateHostingController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            emptyStateHostingController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            emptyStateHostingController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+
+            paginationIndicator.bottomAnchor.constraint(
+                equalTo: view.safeAreaLayoutGuide.bottomAnchor,
+                constant: -8
+            ),
+            paginationIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor)
+        ])
+
+        render()
+    }
 
     /// Each card is square (matches the Figma measurement of a 163x163 tile at the
     /// reference frame width) -- computed from the actual available width via
     /// `sectionProvider` instead of hardcoding 163pt, so it scales on other screen sizes.
-    private static func makeLayout() -> UICollectionViewCompositionalLayout {
+    static func makeLayout() -> UICollectionViewCompositionalLayout {
         UICollectionViewCompositionalLayout { _, environment in
             let columns = 2
             let containerWidth = environment.container.effectiveContentSize.width
@@ -346,9 +353,20 @@ extension ProductListViewController: UIGestureRecognizerDelegate {
     }
 }
 
-#if DEBUG
-import SwiftUI
+/// Expands only the tappable area, not the visual frame, so a button can stay
+/// visually compact (matching a Figma measurement) while still meeting the
+/// HIG's 44x44pt minimum tap target.
+private final class ExpandedHitAreaButton: UIButton {
+    private static let minimumHitAreaSize: CGFloat = 44
 
+    override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+        let widthInset = min(0, bounds.width - Self.minimumHitAreaSize) / 2
+        let heightInset = min(0, bounds.height - Self.minimumHitAreaSize) / 2
+        return bounds.insetBy(dx: widthInset, dy: heightInset).contains(point)
+    }
+}
+
+#if DEBUG
 private struct PreviewFetchLikedProductsUseCase: FetchLikedProductsUseCase {
     func execute(page: Int) async throws -> ProductsPage {
         let items = (1...10).map { index in

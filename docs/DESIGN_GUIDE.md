@@ -66,6 +66,22 @@ The developer shared Figma Dev Mode inspector crops for the price/badge elements
 
 Still unmeasured: headline/subtitle exact size, the "limpar busca" button's exact padding. Update this section as more Dev Mode values come in.
 
+## 7. HIG audit — contrast & tap targets
+
+Done at the developer's request, cross-checking the running app against Apple's Human Interface Guidelines (color contrast and interaction/tap-target sections), separate from the Figma visual read above.
+
+- **Contrast, calculated (WCAG relative-luminance formula, not eyeballed)**:
+  - `BrandPurple` (`#61005D`) on white ≈ **12.6:1** — well above the 4.5:1 minimum. Used for the discount badge, sale price, "limpar busca" link/button, logo.
+  - System `.secondaryLabel` (RGB 60,60,67 @ 60% alpha) blended over white ≈ **3.44:1** — **fails** WCAG AA (4.5:1) at the small text sizes it was used at here (12–15pt). Replaced with a solid `ReadableGray` (`UIColor(white: 0.35, alpha: 1)`, `Presentation/Shared/ReadableGray.swift`) ≈ **7:1**, at: the empty-state subtitle, the strikethrough original price in `ProductCell`, and the error-state message label.
+  - `.placeholderText`/`.tertiaryLabel` (30% alpha) ≈ 1.73:1 — left as-is; HIG treats placeholder/hint text as non-critical and exempt from the same bar as real content.
+- **Tap targets (44x44pt HIG minimum)**:
+  - `clearSearchButton` (inline "limpar busca" next to the search field) measured 121x34.33pt — visually correct per Figma's 42pt-tall search row, but under 44pt tall. Fixed by expanding only the *tappable* hit area (`ExpandedHitAreaButton`, overrides `point(inside:with:)`), not the visual frame, so the Figma-matched row height is untouched.
+  - `retryButton` ("tentar novamente" in the error state) grew via `contentInsets` (13pt top/bottom) since it lives in a self-sizing stack with no external height constraint.
+  - The empty-state SwiftUI "limpar busca" pill button got an explicit `.frame(minHeight: 44)` as a floor, independent of its exact padding/font metrics.
+- **`ProductCell` accessibility**: added a combined `accessibilityLabel` (title + price, or title + sale price + original price + discount %) so VoiceOver reads one coherent phrase per card instead of silence or fragmented sub-labels.
+- **Not changed**: icon sizes (search icon 16x16pt, logo 32x32pt), section margins (16pt), and the search field's 42pt height were all re-checked against HIG's general "give tappable icons breathing room" guidance and found consistent with the already-implemented Figma measurements — no violation found there.
+- **Deferred, not in this pass**: Dynamic Type support for `AppFont` (a bigger, separate change) and a real tap action on `ProductCell` (functional gap, not a HIG compliance issue).
+
 ## How to use this doc
 
 - Phase 3's spec (`docs/specs/03-product-list-screen.md`) implements against this guide's layout/behavior description.

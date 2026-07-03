@@ -1,6 +1,8 @@
 import Foundation
 
 final class URLSessionHTTPClient: HTTPClient {
+    // Compile-time string literal, cannot fail at runtime.
+    // swiftlint:disable:next force_unwrapping
     private static let defaultBaseURL = URL(string: "https://www.enjoei.com.br/api/v5")!
 
     private let baseURL: URL

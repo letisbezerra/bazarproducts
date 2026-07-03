@@ -42,7 +42,7 @@ final class ProductCell: UICollectionViewCell {
     private let originalPriceLabel: UILabel = {
         let label = UILabel()
         label.font = AppFont.uiFont(size: 12, weight: .regular)
-        label.textColor = .secondaryLabel
+        label.textColor = ReadableGray.uiColor
         return label
     }()
 
@@ -68,6 +68,7 @@ final class ProductCell: UICollectionViewCell {
     func configure(with product: Product) {
         imageView.kf.setImage(with: product.imageURL)
         currentPriceLabel.text = PriceFormatter.string(from: product.currentPrice)
+        isAccessibilityElement = true
 
         if let originalPrice = product.originalPrice, let discountPercentage = product.discountPercentage {
             badgeLabel.text = "\(discountPercentage)% off"
@@ -78,14 +79,19 @@ final class ProductCell: UICollectionViewCell {
                 string: PriceFormatter.string(from: originalPrice),
                 attributes: [
                     .strikethroughStyle: NSUnderlineStyle.single.rawValue,
-                    .foregroundColor: UIColor.secondaryLabel
+                    .foregroundColor: ReadableGray.uiColor
                 ]
             )
             originalPriceLabel.isHidden = false
+
+            accessibilityLabel = "\(product.title), \(PriceFormatter.string(from: product.currentPrice)), "
+                + "de \(PriceFormatter.string(from: originalPrice)), \(discountPercentage)% off"
         } else {
             badgeLabel.isHidden = true
             originalPriceLabel.isHidden = true
             currentPriceLabel.textColor = .label
+
+            accessibilityLabel = "\(product.title), \(PriceFormatter.string(from: product.currentPrice))"
         }
     }
 

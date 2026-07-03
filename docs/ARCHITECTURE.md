@@ -32,7 +32,7 @@ Dependency rule: `Presentation` knows `Domain`; `Data` implements the protocols 
 
 - **Concurrency:** `async/await` (Swift Concurrency) instead of Combine — it's Apple's recommended standard for new code since iOS 15/Swift 5.5, simpler to read and to test with async `XCTest`.
 - **Networking:** an injected `HTTPClient` protocol (not a concrete class directly), allowing responses to be mocked in tests without hitting the real API. URL building via `URLComponents`/`URLQueryItem` (not string concatenation), avoiding malformed URLs and following Apple's recommended practice to avoid invalid characters in the query.
-- **Pagination:** `ProductsRepository.fetchLikedProducts(page: Int)`. The ViewModel holds `currentPage` and `hasMorePages` (becomes `false` when the API returns an empty page). The next page load is triggered via `UICollectionViewDataSourcePrefetching`, not `scrollViewDidScroll`, which is less precise.
+- **Pagination:** `ProductsRepository.fetchLikedProducts(page: Int)`. The ViewModel holds `currentPage` and `hasNextPage`, set from the API's own `pagination.next_page` field (`nil` on the last page — confirmed directly against the live API, which clamps out-of-range pages instead of erroring). This replaced an earlier "empty page = no more pages" heuristic once the real payload shape was known. The next page load is triggered via `UICollectionViewDataSourcePrefetching`, not `scrollViewDidScroll`, which is less precise.
 - **Search:** 100% local (client-side) filtering over the list already loaded in memory — the API is not called again on search, exactly as requested. No network debounce (there's no network call here), but a small typing debounce (~250ms via a cancellable `Task`) just to avoid recomputing the filter on every keystroke.
 - **Images:** Kingfisher (SPM) for disk/memory caching and automatic cancellation on reused cells — avoiding reinventing this is a productivity choice, and it's a mature, widely used library in the iOS market.
 - **Layout:** `UICollectionView` with Compositional Layout (2-column grid) + `NSDiffableDataSourceSnapshot`, 100% in code (no Storyboard/XIB) — easier to review in a diff/PR and avoids merge conflicts, a common practice in teams using Git Flow (as Enjoei describes in the job posting).
@@ -53,7 +53,7 @@ Focus on business logic and success/failure flows, as requested in the test brie
 - **Mapper:** DTO → domain entity conversion (discount/tag calculation, price formatting).
 - Mocks built via protocol (`HTTPClient`, `ProductsRepository`), with no need for real network calls or extra mocking libraries.
 
-## 6. Proposed folder structure
+## 6. Folder structure (as built)
 
 ```
 EnjoeiProducts/
@@ -63,28 +63,35 @@ EnjoeiProducts/
     UseCases/             FetchLikedProductsUseCase.swift
     Repositories/          ProductsRepository.swift (protocol)
   Data/
-    DTO/                  ProductDTO.swift, ProductsResponseDTO.swift
+    DTO/                  ProductDTO.swift, ProductsResponseDTO.swift, PriceDTO.swift, PaginationDTO.swift
     Mappers/              ProductMapper.swift
-    Network/              HTTPClient.swift, URLSessionHTTPClient.swift, ProductsAPI.swift (endpoints)
     Repositories/          ProductsRepositoryImpl.swift
+  Core/                    generic infra, not tied to this one feature
+    HTTPClient.swift, URLSessionHTTPClient.swift, Endpoint.swift, NetworkError.swift
+    ImageURLBuilder.swift
+    AppLogger.swift
   Presentation/
     ProductList/
       ProductListViewController.swift
       ProductListViewModel.swift
       ProductCell.swift
-      Views/               EmptyStateView.swift, SkeletonCell.swift, SearchBarView.swift
-  Core/
-    ImageURLBuilder.swift
-    Constants.swift
+      Formatting/          PriceFormatter.swift
+      Views/               EmptyStateView.swift (SwiftUI), SkeletonGridView.swift
+    Shared/                AppFont.swift, BrandColor.swift, ReadableGray.swift (cross-screen presentation helpers)
 EnjoeiProductsTests/
-  ProductListViewModelTests.swift
-  ProductsRepositoryImplTests.swift
-  ProductMapperTests.swift
+  Core/                    AppLoggerTests.swift, ImageURLBuilderTests.swift, URLSessionHTTPClientTests.swift
+  Data/                    ProductMapperTests.swift, ProductsRepositoryImplTests.swift
+  Domain/                  FetchLikedProductsUseCaseTests.swift
+  Presentation/            AppFontTests.swift, PriceFormatterTests.swift, ProductListViewModelTests.swift
   Mocks/                   HTTPClientMock.swift, ProductsRepositoryMock.swift
+EnjoeiProductsUITests/
+  EnjoeiProductsUITests.swift, EnjoeiProductsUITestsLaunchTests.swift
 ```
+
+Network code (`HTTPClient`, `Endpoint`, `NetworkError`, `AppLogger`) lives under `Core/`, not a `Data/Network/` subfolder as an earlier draft of this doc proposed — it's generic infrastructure with no `Product`-specific knowledge, so `Data/` stays limited to this feature's own DTOs/mappers/repository implementation.
 
 ## 7. Out of scope (deliberately)
 
 - Coordinator pattern for navigation — there's only one screen, adding this now would be complexity with no real benefit.
 - DI framework (Swinject, etc.) — manual initializer injection is enough and easier to read for the scope of this test.
-- UI/snapshot tests — priority given to business logic tests, which is what the brief explicitly asks for.
+- Snapshot/visual-regression tests — no tooling set up for that. **Not the same as UI tests**: a small XCUITest suite (`EnjoeiProductsUITests`) covers the four mandatory flows end-to-end (launch → results, pagination scroll, search with matches, search with no matches → "limpar busca"), reversing an earlier call in this doc to skip UI tests entirely — the job posting explicitly asks for "testes unitários e de interface do usuário," not just unit tests.

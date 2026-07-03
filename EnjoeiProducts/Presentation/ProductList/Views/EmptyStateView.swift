@@ -10,7 +10,7 @@ struct EmptyStateView: View {
 
             Text("que tal recomeçar do começo?")
                 .font(AppFont.font(size: 15, weight: .regular))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(ReadableGray.color)
 
             Button(action: onClearSearch) {
                 Text("limpar busca")
@@ -18,6 +18,7 @@ struct EmptyStateView: View {
                     .foregroundStyle(.white)
                     .padding(.horizontal, 24)
                     .padding(.vertical, 12)
+                    .frame(minHeight: 44)
                     .background(Capsule().fill(BrandColor.color))
             }
 

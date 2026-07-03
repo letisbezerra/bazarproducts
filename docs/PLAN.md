@@ -9,7 +9,7 @@ This is the durable copy of our build-out plan, kept in the repo so any future s
 | 0 — Standards & tooling | `feature/project-standards` | `docs/specs/00-project-standards.md` | Merged — [#1](https://github.com/letisbezerra/bazarproducts/pull/1) |
 | 1 — Core & networking | `feature/core-networking` | `docs/specs/01-core-networking.md` | Merged — [#2](https://github.com/letisbezerra/bazarproducts/pull/2) |
 | 2 — Domain & Data | `feature/domain-data` | `docs/specs/02-domain-data.md` | Merged — [#3](https://github.com/letisbezerra/bazarproducts/pull/3) |
-| 3 — Product list screen | `feature/product-list-screen` | `docs/specs/03-product-list-screen.md` | Not started |
+| 3 — Product list screen | `feature/product-list-screen` | `docs/specs/03-product-list-screen.md` | Implemented — code review fixes + HIG audit (contrast, tap targets, accessibility) applied; pending developer validation before commit/PR |
 | 4 — UI tests, accessibility & performance | `feature/ui-tests-and-polish` | `docs/specs/04-ui-tests-and-polish.md` | Not started |
 | 5 — Docs & release | `chore/release-prep` (or direct on `develop`) | `docs/specs/05-docs-and-release.md` | Not started |
 
@@ -22,6 +22,7 @@ Things a phase surfaced that only the developer can resolve (a design asset, a p
 - [x] **Grid spacing/corner radius calibration** — resolved via more Dev Mode crops: 16pt screen margin, 8pt grid gutter (both confirmed to match what was already implemented as a guess), 16pt product card corner radius (was 12pt, corrected), badge/price container padding. `ProductCell`'s compositional layout also corrected to make each card **square** (was assumed to be a tall rectangle) — computed dynamically from the actual screen width rather than hardcoding Figma's 163pt reference-frame measurement, so it scales on other device sizes.
 - [x] **Remaining spacing/typography calibration** — search bar container resolved via Dev Mode crop: 335×60 header bar, 335×42 search box (see `docs/DESIGN_GUIDE.md` §6). Headline/subtitle exact sizing and the "limpar busca" button's exact padding remain HIG-default guesses.
 - [x] **Mascot illustration for "No Results"** — resolved: developer exported the real illustration from Figma (`EmptyStateMascot` in `Assets.xcassets`, replacing the SF Symbol placeholder in `EmptyStateView.swift`).
+- [x] **Apple HIG audit (contrast + interactions)** — requested by the developer, resolved: full writeup in `docs/DESIGN_GUIDE.md` §7. `.secondaryLabel` failed WCAG AA for small text (~3.44:1, needs 4.5:1) and was replaced with a solid `ReadableGray` (~7:1) at the three small-text call sites; two tap targets under 44pt (inline "limpar busca", "tentar novamente") were fixed without changing their Figma-matched visual size; `ProductCell` gained a combined `accessibilityLabel` for VoiceOver. In-field microphone dictation was explicitly descoped — the developer chose to rely on and verify the native iOS keyboard dictation button instead of building a custom Speech-framework feature.
 
 ## Context
 
@@ -131,8 +132,9 @@ Spec: `docs/specs/04-ui-tests-and-polish.md` — the four flows to be scripted a
 
 Spec: `docs/specs/05-docs-and-release.md` — checklist of what must be reconciled between `ARCHITECTURE.md`/README and what was actually built, and the exact release checklist (CI status, PR, zip).
 
-- Update `docs/ARCHITECTURE.md` with the two corrections found during Phase 2 (pagination via `next_page`, image URL as plain concatenation) and the Phase 4 addition of UI tests, so the doc matches what was actually built (job posting: "manter a documentação técnica sempre atualizada").
-- Fill in the README's "AI usage" section for real, based on what was actually delegated to AI vs. done by hand across these phases.
+- ~~Update `docs/ARCHITECTURE.md` with the pagination (`next_page`) correction and the UI-tests reversal~~ — done early, during Phase 3's documentation audit, instead of waiting until this phase: an evaluator reading `ARCHITECTURE.md` mid-project shouldn't see it contradict the actual code. `ARCHITECTURE.md`'s folder structure (§6) was also corrected to match what was actually built (network code under `Core/`, not `Data/Network/`; `Presentation/Shared/` added).
+- Fill in the README's "AI usage" section for real, consolidating `docs/AI_USAGE_LOG.md` (a running log kept since Phase 3, added specifically so this section wouldn't need to be reconstructed from memory at the end).
+- **Delivery cleanup, decided with the developer during Phase 3's documentation audit**: the zip that goes to Enjoei should only contain `README.md` and `docs/ARCHITECTURE.md` as documentation — everything else here (`docs/CONTEXT_TEST.md`, `docs/PLAN.md`, `docs/specs/*.md`, `docs/AI_USAGE_LOG.md`, `CLAUDE.md`) is internal planning/process scaffolding for working with AI across sessions, not useful to an outside reader, and gets deleted from the working tree in one commit right before zipping (not before — these docs are still needed to finish Phases 4-5). `docs/DESIGN_GUIDE.md` is undecided: keep as-is, keep after a tone cleanup (it currently reads as internal notes, e.g. "best guess," "confirm with developer"), or also remove — revisit at the time.
 - Confirm CI is green on `develop`, open the `develop` → `main` PR, then zip the project per `docs/CONTEXT_TEST.md`'s delivery instructions.
 
 ## Verification (per phase)
