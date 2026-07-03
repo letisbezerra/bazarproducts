@@ -4,6 +4,13 @@ import Kingfisher
 final class ProductCell: UICollectionViewCell {
     static let reuseIdentifier = "ProductCell"
 
+    // The card renders at roughly 163pt square (see makeLayout's comment in
+    // ProductListViewController); downsampling to a fixed bound well above that
+    // avoids decoding/caching each photo at its full network resolution.
+    private static let imageProcessor = DownsamplingImageProcessor(
+        size: CGSize(width: 200 * UIScreen.main.scale, height: 200 * UIScreen.main.scale)
+    )
+
     private let imageView: UIImageView = {
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFill
@@ -66,17 +73,19 @@ final class ProductCell: UICollectionViewCell {
     }
 
     func configure(with product: Product) {
-        imageView.kf.setImage(with: product.imageURL)
-        currentPriceLabel.text = PriceFormatter.string(from: product.currentPrice)
+        imageView.kf.setImage(with: product.imageURL, options: [.processor(Self.imageProcessor)])
+        let currentPriceText = PriceFormatter.string(from: product.currentPrice)
+        currentPriceLabel.text = currentPriceText
         isAccessibilityElement = true
 
         if let originalPrice = product.originalPrice, let discountPercentage = product.discountPercentage {
+            let originalPriceText = PriceFormatter.string(from: originalPrice)
             badgeLabel.text = "\(discountPercentage)% off"
             badgeLabel.isHidden = false
 
             currentPriceLabel.textColor = BrandColor.uiColor
             originalPriceLabel.attributedText = NSAttributedString(
-                string: PriceFormatter.string(from: originalPrice),
+                string: originalPriceText,
                 attributes: [
                     .strikethroughStyle: NSUnderlineStyle.single.rawValue,
                     .foregroundColor: ReadableGray.uiColor
@@ -84,14 +93,14 @@ final class ProductCell: UICollectionViewCell {
             )
             originalPriceLabel.isHidden = false
 
-            accessibilityLabel = "\(product.title), \(PriceFormatter.string(from: product.currentPrice)), "
-                + "de \(PriceFormatter.string(from: originalPrice)), \(discountPercentage)% off"
+            accessibilityLabel = "\(product.title), \(currentPriceText), "
+                + "de \(originalPriceText), \(discountPercentage)% off"
         } else {
             badgeLabel.isHidden = true
             originalPriceLabel.isHidden = true
             currentPriceLabel.textColor = .label
 
-            accessibilityLabel = "\(product.title), \(PriceFormatter.string(from: product.currentPrice))"
+            accessibilityLabel = "\(product.title), \(currentPriceText)"
         }
     }
 

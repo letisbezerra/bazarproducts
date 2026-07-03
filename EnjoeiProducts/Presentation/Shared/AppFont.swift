@@ -10,8 +10,6 @@ enum AppFont {
         switch weight {
         case .regular:
             return "Montserrat-Regular"
-        case .medium:
-            return "Montserrat-Medium"
         case .semibold:
             return "Montserrat-SemiBold"
         case .bold:

@@ -16,14 +16,20 @@ final class ProductListViewModel {
     }
 
     private(set) var searchText: String = "" {
-        didSet { onChange?() }
+        didSet {
+            cachedDisplayedProducts = nil
+            onChange?()
+        }
     }
 
     private(set) var isLoadingNextPage = false
 
     var onChange: (() -> Void)?
 
-    private var products: [Product] = []
+    private var products: [Product] = [] {
+        didSet { cachedDisplayedProducts = nil }
+    }
+    private var cachedDisplayedProducts: [Product]?
     private var currentPage = 1
     private var hasNextPage = true
     private var searchDebounceTask: Task<Void, Never>?
@@ -41,11 +47,14 @@ final class ProductListViewModel {
     }
 
     var displayedProducts: [Product] {
+        if let cachedDisplayedProducts { return cachedDisplayedProducts }
+
         let query = trimmedSearchText
-        guard !query.isEmpty else { return products }
-        return products.filter {
-            $0.title.range(of: query, options: [.caseInsensitive, .diacriticInsensitive]) != nil
-        }
+        let result = query.isEmpty
+            ? products
+            : products.filter { $0.title.range(of: query, options: [.caseInsensitive, .diacriticInsensitive]) != nil }
+        cachedDisplayedProducts = result
+        return result
     }
 
     var showsNoResultsState: Bool {
@@ -69,7 +78,10 @@ final class ProductListViewModel {
 
     func loadNextPageIfNeeded(currentRow: Int) {
         guard state == .loaded, hasNextPage, !isLoadingNextPage else { return }
-        guard currentRow >= products.count - Self.prefetchThreshold else { return }
+        // currentRow indexes into displayedProducts (what the collection view actually shows,
+        // possibly search-filtered) -- comparing it against the full products.count instead would
+        // make pagination silently stall whenever a search filters the list down.
+        guard currentRow >= displayedProducts.count - Self.prefetchThreshold else { return }
 
         let nextPage = currentPage + 1
         isLoadingNextPage = true
@@ -78,7 +90,8 @@ final class ProductListViewModel {
         Task {
             do {
                 let page = try await useCase.execute(page: nextPage)
-                products += page.items
+                let existingIds = Set(products.map(\.id))
+                products += page.items.filter { !existingIds.contains($0.id) }
                 currentPage = nextPage
                 hasNextPage = page.hasNextPage
             } catch {

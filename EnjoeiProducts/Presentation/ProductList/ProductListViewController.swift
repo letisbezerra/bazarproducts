@@ -42,7 +42,7 @@ final class ProductListViewController: UIViewController {
         textField.backgroundColor = .systemBackground
         textField.layer.cornerRadius = 8
         textField.layer.borderWidth = 1.5
-        textField.layer.borderColor = UIColor(named: "HeaderDivider")?.cgColor
+        textField.layer.borderColor = HeaderDividerColor.uiColor.cgColor
         textField.returnKeyType = .search
         textField.clearButtonMode = .never
         textField.enablesReturnKeyAutomatically = false
@@ -222,7 +222,7 @@ private extension ProductListViewController {
         let appearance = UINavigationBarAppearance()
         appearance.configureWithOpaqueBackground()
         appearance.backgroundColor = .systemBackground
-        appearance.shadowColor = UIColor(named: "HeaderDivider")
+        appearance.shadowColor = HeaderDividerColor.uiColor
 
         navigationController?.navigationBar.standardAppearance = appearance
         navigationController?.navigationBar.scrollEdgeAppearance = appearance
@@ -252,7 +252,6 @@ private extension ProductListViewController {
         view.addGestureRecognizer(dismissKeyboardTap)
 
         addChild(emptyStateHostingController)
-        emptyStateHostingController.didMove(toParent: self)
 
         let searchRow = UIStackView(arrangedSubviews: [searchField, clearSearchButton])
         searchRow.axis = .horizontal
@@ -266,6 +265,10 @@ private extension ProductListViewController {
             $0.translatesAutoresizingMaskIntoConstraints = false
             view.addSubview($0)
         }
+
+        // UIKit's documented child-view-controller order: add the view to the
+        // hierarchy *then* call didMove(toParent:), not before.
+        emptyStateHostingController.didMove(toParent: self)
 
         NSLayoutConstraint.activate([
             searchRow.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
@@ -350,19 +353,6 @@ extension ProductListViewController: UICollectionViewDelegate {}
 extension ProductListViewController: UIGestureRecognizerDelegate {
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
         !(touch.view?.isDescendant(of: searchField) ?? false)
-    }
-}
-
-/// Expands only the tappable area, not the visual frame, so a button can stay
-/// visually compact (matching a Figma measurement) while still meeting the
-/// HIG's 44x44pt minimum tap target.
-private final class ExpandedHitAreaButton: UIButton {
-    private static let minimumHitAreaSize: CGFloat = 44
-
-    override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
-        let widthInset = min(0, bounds.width - Self.minimumHitAreaSize) / 2
-        let heightInset = min(0, bounds.height - Self.minimumHitAreaSize) / 2
-        return bounds.insetBy(dx: widthInset, dy: heightInset).contains(point)
     }
 }
 
