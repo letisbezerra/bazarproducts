@@ -10,6 +10,11 @@ final class ProductListViewModel {
 
     private static let prefetchThreshold = 5
     private static let searchDebounceNanoseconds: UInt64 = 250_000_000
+    // Real API, no mock -- fast responses can make the loading state too transient for
+    // ProductListUITests to observe. This launch argument (test-only, never set in a
+    // real launch) slows down just the first page's fetch enough to make it observable,
+    // without touching the data itself.
+    private static let uiTestingArtificialDelayArgument = "-uiTestingArtificialDelay"
 
     private(set) var state: State = .loading {
         didSet { onChange?() }
@@ -64,6 +69,10 @@ final class ProductListViewModel {
     func loadInitialPage() async {
         state = .loading
         currentPage = 1
+
+        if ProcessInfo.processInfo.arguments.contains(Self.uiTestingArtificialDelayArgument) {
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
+        }
 
         do {
             let page = try await useCase.execute(page: currentPage)

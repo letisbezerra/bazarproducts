@@ -21,6 +21,7 @@ struct EmptyStateView: View {
                     .frame(minHeight: 44)
                     .background(Capsule().fill(BrandColor.color))
             }
+            .accessibilityIdentifier("emptyStateClearButton")
 
             Spacer()
 

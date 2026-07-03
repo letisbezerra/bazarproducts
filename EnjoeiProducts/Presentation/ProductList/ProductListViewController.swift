@@ -16,6 +16,7 @@ final class ProductListViewController: UIViewController {
         collectionView.register(ProductCell.self, forCellWithReuseIdentifier: ProductCell.reuseIdentifier)
         collectionView.delegate = self
         collectionView.prefetchDataSource = self
+        collectionView.accessibilityIdentifier = "productCollectionView"
         return collectionView
     }()
 
@@ -69,6 +70,7 @@ final class ProductListViewController: UIViewController {
         configuration.baseForegroundColor = BrandColor.uiColor
         let button = ExpandedHitAreaButton(configuration: configuration)
         button.isHidden = true
+        button.accessibilityIdentifier = "inlineClearSearchButton"
         return button
     }()
 
@@ -243,6 +245,7 @@ private extension ProductListViewController {
     }
 
     func setUpViews() {
+        skeletonView.accessibilityIdentifier = "skeletonGridView"
         searchField.addTarget(self, action: #selector(searchFieldDidChange), for: .editingChanged)
         clearSearchButton.addTarget(self, action: #selector(clearSearchTapped), for: .touchUpInside)
 
