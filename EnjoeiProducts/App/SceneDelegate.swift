@@ -1,0 +1,28 @@
+import UIKit
+
+final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
+
+    var window: UIWindow?
+
+    func scene(
+        _ scene: UIScene,
+        willConnectTo session: UISceneSession,
+        options connectionOptions: UIScene.ConnectionOptions
+    ) {
+        guard let windowScene = scene as? UIWindowScene else { return }
+
+        let httpClient = URLSessionHTTPClient()
+        let repository = ProductsRepositoryImpl(httpClient: httpClient)
+        let useCase = DefaultFetchLikedProductsUseCase(repository: repository)
+        let viewModel = ProductListViewModel(useCase: useCase)
+        let productListViewController = ProductListViewController(viewModel: viewModel)
+
+        let window = UIWindow(windowScene: windowScene)
+        window.rootViewController = UINavigationController(rootViewController: productListViewController)
+        // The Figma design only has a light-mode spec; forcing it avoids inventing
+        // an unverified dark palette (see docs/DESIGN_GUIDE.md).
+        window.overrideUserInterfaceStyle = .light
+        window.makeKeyAndVisible()
+        self.window = window
+    }
+}

@@ -1,0 +1,225 @@
+import UIKit
+import Kingfisher
+
+final class ProductCell: UICollectionViewCell {
+    static let reuseIdentifier = "ProductCell"
+
+    // The card renders at roughly 163pt square (see makeLayout's comment in
+    // ProductListViewController); downsampling to a fixed bound well above that
+    // avoids decoding/caching each photo at its full network resolution.
+    private static let imageProcessor = DownsamplingImageProcessor(
+        size: CGSize(width: 200 * UIScreen.main.scale, height: 200 * UIScreen.main.scale)
+    )
+
+    private let imageView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.contentMode = .scaleAspectFill
+        imageView.clipsToBounds = true
+        // Solid background instead of an icon placeholder: an SF Symbol under
+        // scaleAspectFill stretches into an unrecognizable shape at this size.
+        imageView.backgroundColor = .systemGray6
+        return imageView
+    }()
+
+    private let badgeLabel: InsetLabel = {
+        let label = InsetLabel()
+        // .caption1 (not .caption2) to match currentPriceLabel/originalPriceLabel's scaling
+        // curve -- .caption2 is intentionally flat through the mid-range Dynamic Type sizes,
+        // which made the badge visibly lag behind the price text as it grew.
+        label.font = AppFont.uiFont(size: 10, weight: .semibold, textStyle: .caption1)
+        label.adjustsFontForContentSizeCategory = true
+        // The badge and price pill sit inside a fixed-size (non-growing) card with no
+        // constraint bounding their combined height -- capping how far they scale avoids
+        // them growing into/clipping each other at the most extreme accessibility sizes.
+        label.maximumContentSizeCategory = .accessibilityLarge
+        label.textColor = .white
+        label.backgroundColor = BrandColor.uiColor
+        label.textAlignment = .center
+        label.layer.cornerRadius = 6
+        label.layer.masksToBounds = true
+        return label
+    }()
+
+    private let priceContainerView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .systemBackground
+        view.layer.cornerRadius = 6
+        view.layer.masksToBounds = true
+        return view
+    }()
+
+    private let currentPriceLabel: UILabel = {
+        let label = UILabel()
+        label.font = AppFont.uiFont(size: 12, weight: .regular, textStyle: .caption1)
+        label.adjustsFontForContentSizeCategory = true
+        label.maximumContentSizeCategory = .accessibilityLarge
+        return label
+    }()
+
+    private let originalPriceLabel: UILabel = {
+        let label = UILabel()
+        label.font = AppFont.uiFont(size: 12, weight: .regular, textStyle: .caption1)
+        label.adjustsFontForContentSizeCategory = true
+        label.maximumContentSizeCategory = .accessibilityLarge
+        label.textColor = ReadableGray.uiColor
+        return label
+    }()
+
+    // Horizontal side-by-side prices don't fit the card's fixed width at large
+    // accessibility text sizes (the original price gets truncated) -- switches to
+    // vertical in updatePriceStackAxis() when that's the case.
+    private let priceStack: UIStackView = {
+        let stack = UIStackView()
+        stack.spacing = 6
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        return stack
+    }()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setUpViews()
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        if traitCollection.preferredContentSizeCategory != previousTraitCollection?.preferredContentSizeCategory {
+            updatePriceStackAxis()
+        }
+    }
+
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        imageView.kf.cancelDownloadTask()
+        imageView.image = nil
+        badgeLabel.isHidden = true
+        originalPriceLabel.isHidden = true
+        originalPriceLabel.attributedText = nil
+    }
+
+    func configure(with product: Product) {
+        // Cells sitting in the reuse pool are detached from the view hierarchy and don't
+        // receive traitCollectionDidChange, so a content-size-category change made while a
+        // cell was pooled would otherwise leave it with a stale axis once dequeued for reuse.
+        updatePriceStackAxis()
+        imageView.kf.setImage(with: product.imageURL, options: [.processor(Self.imageProcessor)])
+        let currentPriceText = PriceFormatter.string(from: product.currentPrice)
+        currentPriceLabel.text = currentPriceText
+        isAccessibilityElement = true
+
+        if let originalPrice = product.originalPrice, let discountPercentage = product.discountPercentage {
+            let originalPriceText = PriceFormatter.string(from: originalPrice)
+            badgeLabel.text = "\(discountPercentage)% off"
+            badgeLabel.isHidden = false
+
+            currentPriceLabel.textColor = BrandColor.uiColor
+            originalPriceLabel.attributedText = NSAttributedString(
+                string: originalPriceText,
+                attributes: [
+                    .strikethroughStyle: NSUnderlineStyle.single.rawValue,
+                    .foregroundColor: ReadableGray.uiColor
+                ]
+            )
+            originalPriceLabel.isHidden = false
+
+            accessibilityLabel = "\(product.title), \(currentPriceText), "
+                + "de \(originalPriceText), \(discountPercentage)% off"
+        } else {
+            badgeLabel.isHidden = true
+            originalPriceLabel.isHidden = true
+            currentPriceLabel.textColor = .label
+
+            accessibilityLabel = "\(product.title), \(currentPriceText)"
+        }
+    }
+
+    private func setUpViews() {
+        contentView.layer.cornerRadius = 16
+        contentView.layer.masksToBounds = true
+
+        [currentPriceLabel, originalPriceLabel].forEach(priceStack.addArrangedSubview)
+        updatePriceStackAxis()
+        priceContainerView.addSubview(priceStack)
+
+        [imageView, badgeLabel, priceContainerView].forEach {
+            $0.translatesAutoresizingMaskIntoConstraints = false
+            contentView.addSubview($0)
+        }
+
+        badgeLabel.isHidden = true
+        originalPriceLabel.isHidden = true
+
+        NSLayoutConstraint.activate([
+            imageView.topAnchor.constraint(equalTo: contentView.topAnchor),
+            imageView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            imageView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            imageView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
+
+            badgeLabel.topAnchor.constraint(equalTo: imageView.topAnchor, constant: 8),
+            badgeLabel.trailingAnchor.constraint(equalTo: imageView.trailingAnchor, constant: -8),
+            badgeLabel.heightAnchor.constraint(greaterThanOrEqualToConstant: 22),
+            badgeLabel.widthAnchor.constraint(greaterThanOrEqualToConstant: 48),
+
+            priceContainerView.leadingAnchor.constraint(equalTo: imageView.leadingAnchor, constant: 8),
+            priceContainerView.bottomAnchor.constraint(equalTo: imageView.bottomAnchor, constant: -8),
+            priceContainerView.trailingAnchor.constraint(lessThanOrEqualTo: imageView.trailingAnchor, constant: -8),
+
+            priceStack.topAnchor.constraint(equalTo: priceContainerView.topAnchor, constant: 4),
+            priceStack.bottomAnchor.constraint(equalTo: priceContainerView.bottomAnchor, constant: -4),
+            priceStack.leadingAnchor.constraint(equalTo: priceContainerView.leadingAnchor, constant: 8),
+            priceStack.trailingAnchor.constraint(equalTo: priceContainerView.trailingAnchor, constant: -8)
+        ])
+
+        badgeLabel.setContentHuggingPriority(.required, for: .horizontal)
+    }
+
+    private func updatePriceStackAxis() {
+        let isAccessibilityCategory = traitCollection.preferredContentSizeCategory.isAccessibilityCategory
+        priceStack.axis = isAccessibilityCategory ? .vertical : .horizontal
+        priceStack.alignment = isAccessibilityCategory ? .leading : .firstBaseline
+    }
+}
+
+#if DEBUG
+import SwiftUI
+
+private struct ProductCellPreview: UIViewRepresentable {
+    let product: Product
+
+    func makeUIView(context: Context) -> ProductCell {
+        let cell = ProductCell(frame: CGRect(x: 0, y: 0, width: 163, height: 163))
+        cell.configure(with: product)
+        return cell
+    }
+
+    func updateUIView(_ uiView: ProductCell, context: Context) {}
+}
+
+#Preview("With discount") {
+    ProductCellPreview(product: Product(
+        id: 1,
+        title: "vestido azul",
+        imageURL: nil,
+        currentPrice: 56.0,
+        originalPrice: 80.0,
+        discountPercentage: 30
+    ))
+    .frame(width: 163, height: 163)
+}
+
+#Preview("Without discount") {
+    ProductCellPreview(product: Product(
+        id: 2,
+        title: "sapato preto",
+        imageURL: nil,
+        currentPrice: 234.0,
+        originalPrice: nil,
+        discountPercentage: nil
+    ))
+    .frame(width: 163, height: 163)
+}
+#endif
